@@ -1,3 +1,13 @@
+# Config
 compile_commands.json
-src/obj-*
-src/*.o
+
+# Compilation artifacts
+*/obj-*
+*/*.o
+*/*.exe
+
+# Clang stuff
+.cache/
+
+# Pin tool execution artifacts
+res.txt

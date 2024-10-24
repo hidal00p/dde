@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2004-2021 Intel Corporation.
- * SPDX-License-Identifier: MIT
- */
 
 #include "pin.H"
 #include <fstream>
@@ -14,12 +10,16 @@ static UINT64 icount = 0;
 VOID docount() { icount++; }
 
 // Pin calls this function every time a new instruction is encountered
-VOID Instruction(INS ins, VOID *v) {
-  // Insert a call to docount before every instruction, no arguments are passed
+VOID instruction(INS ins, VOID *v) {
+
+  RTN rtn = INS_Rtn(ins);
+  if (!RTN_Valid(rtn) || RTN_Name(rtn) != "main")
+    return;
+
   INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_END);
 }
 
-VOID Fini(INT32 code, VOID *v) {
+VOID fini(INT32 code, VOID *v) {
   std::ofstream res_file;
   res_file.open("res.txt");
   res_file << icount << std::endl;
@@ -30,7 +30,7 @@ VOID Fini(INT32 code, VOID *v) {
 /* Print Help Message                                                    */
 /* ===================================================================== */
 
-INT32 Usage() {
+INT32 usage() {
   puts("This tool counts the number of instructions executed.\n");
   puts("Read Intel Pin instruction manual to learn how to properly "
        "execute pin tools.");
@@ -45,14 +45,15 @@ INT32 Usage() {
 
 int main(int argc, char *argv[]) {
   // Initialize pin
+  PIN_InitSymbols();
   if (PIN_Init(argc, argv))
-    return Usage();
+    return usage();
 
   // Register Instruction to be called to instrument instructions
-  INS_AddInstrumentFunction(Instruction, 0);
+  INS_AddInstrumentFunction(instruction, 0);
 
   // Register Fini to be called when the application exits
-  PIN_AddFiniFunction(Fini, 0);
+  PIN_AddFiniFunction(fini, 0);
 
   // Start the program, never returns
   PIN_StartProgram();
