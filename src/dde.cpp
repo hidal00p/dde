@@ -1,37 +1,40 @@
-
 #include "pin.H"
-#include <fstream>
+#include <iostream>
 
-// The running count of instructions is kept here
-// make it static to help the compiler optimize docount
-static UINT64 icount = 0;
+BOOL is_img_main(TRACE trc) {
+  RTN rtn = TRACE_Rtn(trc);
+  if (!RTN_Valid(rtn))
+    return false;
 
-// This function is called before every instruction is executed
-VOID docount() { icount++; }
+  SEC sec = RTN_Sec(rtn);
+  if (!SEC_Valid(sec))
+    return false;
 
-// Pin calls this function every time a new instruction is encountered
-VOID instruction(INS ins, VOID *v) {
+  IMG img = SEC_Img(sec);
+  return IMG_IsMainExecutable(img);
+}
 
-  RTN rtn = INS_Rtn(ins);
-  if (!RTN_Valid(rtn) || RTN_Name(rtn) != "main")
+void insert_dag_node() { return; }
+
+VOID trace(TRACE trc, VOID *v) {
+  if (!is_img_main(trc))
     return;
 
-  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_END);
+  // Visit every basic block in the trace
+  for (BBL bbl = TRACE_BblHead(trc); BBL_Valid(bbl); bbl = BBL_Next(bbl)) {
+    // Insert a call to docount before every bbl, passing the number of
+    // instructions
+    BBL_InsertCall(bbl, IPOINT_BEFORE, (AFUNPTR)insert_dag_node, IARG_END);
+  }
 }
 
-VOID fini(INT32 code, VOID *v) {
-  std::ofstream res_file;
-  res_file.open("res.txt");
-  res_file << icount << std::endl;
-  res_file.close();
-}
+VOID fini(INT32 code, VOID *v) { std::cout << "Done..." << std::endl; }
 
 /* ===================================================================== */
 /* Print Help Message                                                    */
 /* ===================================================================== */
 
 INT32 usage() {
-  puts("This tool counts the number of instructions executed.\n");
   puts("Read Intel Pin instruction manual to learn how to properly "
        "execute pin tools.");
   return -1;
@@ -44,13 +47,13 @@ INT32 usage() {
 /* ===================================================================== */
 
 int main(int argc, char *argv[]) {
-  // Initialize pin
+  // Initialize pin and symbols
   PIN_InitSymbols();
   if (PIN_Init(argc, argv))
     return usage();
 
   // Register Instruction to be called to instrument instructions
-  INS_AddInstrumentFunction(instruction, 0);
+  TRACE_AddInstrumentFunction(trace, 0);
 
   // Register Fini to be called when the application exits
   PIN_AddFiniFunction(fini, 0);

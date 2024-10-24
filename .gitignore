@@ -10,4 +10,5 @@ compile_commands.json
 .cache/
 
 # Pin tool execution artifacts
-res.txt
+*.out
+pin.log

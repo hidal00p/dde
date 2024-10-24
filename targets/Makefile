@@ -1,4 +1,5 @@
-TARGETS = polynom.exe
+TARGETS = polynom.exe \
+		  traces.exe
 
 all: $(TARGETS)
 
