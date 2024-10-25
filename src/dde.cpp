@@ -35,8 +35,9 @@ VOID fini(INT32 code, VOID *v) { std::cout << "Done..." << std::endl; }
 /* ===================================================================== */
 
 INT32 usage() {
-  puts("Read Intel Pin instruction manual to learn how to properly "
-       "execute pin tools.");
+  std::cout << "Read Intel Pin instruction manual to learn how to properly "
+               "execute pin tools."
+            << std::endl;
   return -1;
 }
 

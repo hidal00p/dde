@@ -12,3 +12,4 @@ compile_commands.json
 # Pin tool execution artifacts
 *.out
 pin.log
+pintool.log

@@ -1,10 +1,13 @@
 TARGETS_DIR := targets
 SRC_DIR := src
 
-dde:
-	$(MAKE) -C $(SRC_DIR) my_tool
+%_tool:
+	$(MAKE) -C $(SRC_DIR) $*
 
-all: dde targets
+tools:
+	$(MAKE) -C $(SRC_DIR) my_tools
+
+all: tools targets
 
 targets:
 	$(MAKE) -C $(TARGETS_DIR)
@@ -17,4 +20,4 @@ clean:
 	$(MAKE) -C $(SRC_DIR)/ clean
 	$(MAKE) -C $(TARGETS_DIR)/ clean
 
-.PHONY: format dde targets
+.PHONY: format targets tools
