@@ -18,7 +18,8 @@ VOID instruction(INS ins, VOID *v) {
   // Insert a call to docount before every instruction, no arguments are passed
 
   RTN rtn = INS_Rtn(ins);
-  if (!RTN_Valid(rtn) || RTN_Name(rtn) != "main")
+  if (!RTN_Valid(rtn) || !(RTN_Name(rtn) == "main" ||
+                           RTN_Name(rtn).find("foo") != std::string::npos))
     return;
 
   std::cout << INS_Mnemonic(ins) << std::endl;
