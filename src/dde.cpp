@@ -1,20 +1,9 @@
 #include "pin.H"
 #include <iostream>
 #include <map>
+#include <string>
 
-enum TransfType { IMUL = 0, ADD, SUB, TERM };
-
-struct node;
-struct transformation {
-  TransfType transf_t;
-  node *args;
-  uint arg_count;
-};
-
-struct node {
-  uint32_t identifier;
-  transformation transf;
-};
+#include "graph.h"
 
 struct variable_context {
   REG reg;
@@ -30,13 +19,8 @@ struct operand_context {
   bool is_mem;
 };
 
-std::map<std::string, int> ins_ctx_table;
-std::vector<node *> nodes;
-
-VOID init_ins_ctx_table() {
-  ins_ctx_table["IMUL"] = 2;
-  ins_ctx_table["MOV"] = 2;
-}
+std::map<uint32_t, node *> known_node_buffer;
+std::map<std::string, int> ins_ctx_table{{"IMUL", 2}, {"MOV", 2}};
 
 BOOL is_img_main(RTN rtn) {
   if (!RTN_Valid(rtn))
@@ -148,26 +132,31 @@ BOOL transformation_candidate(INS ins) {
 
 VOID insert_dag_node(const CONTEXT *ctxt, variable_context *var_ctx_arr,
                      UINT32 operand_count, UINT instruction_type) {
-  node *dag_nodes = new node[operand_count + 1];
+  uint64_t *ef_addr_arr = new uint64_t[operand_count + 1];
   for (uint i = 0; i < operand_count + 1; i++) {
     variable_context var_ctx = var_ctx_arr[i];
-    ADDRINT effective_addr;
 
-    PIN_GetContextRegval(ctxt, var_ctx.reg, (UINT8 *)&effective_addr);
-    effective_addr += var_ctx.displacement;
+    PIN_GetContextRegval(ctxt, var_ctx.reg, (UINT8 *)(ef_addr_arr + i));
+    ef_addr_arr[i] += var_ctx.displacement;
 
-    (dag_nodes + i)->identifier = effective_addr;
-    (dag_nodes + i)->transf = {
-        .transf_t = TransfType::TERM, .args = nullptr, .arg_count = 0};
+    if (known_node_buffer.count(ef_addr_arr[i]) > 0) {
+      known_node_buffer[ef_addr_arr[i]]->top = false;
+    } else {
+      known_node_buffer[ef_addr_arr[i]] = new node(ef_addr_arr[i]);
+    }
   }
 
-  (dag_nodes + operand_count)->transf = {
-      .transf_t = (TransfType)instruction_type,
-      .args = dag_nodes,
-      .arg_count = operand_count,
-  };
+  node *result_node = known_node_buffer[ef_addr_arr[operand_count]];
+  result_node->top = true;
+  result_node->transf.type = (TransfType)instruction_type;
+  result_node->transf.args = new node *[operand_count];
+  result_node->transf.argc = operand_count;
 
-  nodes.push_back(dag_nodes + operand_count);
+  for (uint i = 0; i < operand_count; i++) {
+    result_node->transf.args[i] = known_node_buffer[ef_addr_arr[i]];
+  }
+
+  delete[] ef_addr_arr;
 }
 
 VOID instruction(INS ins, VOID *v) {
@@ -232,26 +221,48 @@ INT32 usage() {
   return -1;
 }
 
-void print_node(node *n, std::string prefix) {
-  std::cout << prefix << "0x" << std::hex << n->identifier;
-  if (n->transf.arg_count == 0 || n->transf.args == nullptr) {
+std::string transf_type_to_string(TransfType tt) {
+  switch (tt) {
+  case TransfType::IMUL:
+    return "*";
+  case TransfType::ADD:
+    return "+";
+  case TransfType::SUB:
+    return "-";
+  default:
+    break;
+  };
+  return "";
+}
+
+void show_node(node *node, std::string prefix) {
+  std::cout << prefix << "0x" << std::hex << node->id;
+
+  if (node->transf.args == nullptr) {
     std::cout << std::endl;
     return;
   }
 
-  std::cout << " " << n->transf.transf_t << std::endl;
-  for (uint i = 0; i < n->transf.arg_count; i++) {
-    print_node(n->transf.args + i, prefix + " ");
-  }
+  std::cout << " " << transf_type_to_string(node->transf.type) << std::endl;
 
-  return;
+  for (uint8_t i = 0; i < node->transf.argc; i++) {
+    show_node(node->transf.args[i], prefix + " ");
+  }
 }
 
-void final_processing(INT32 code, VOID *v) {
-  for (node *n : nodes) {
-    print_node(n, "");
+void show_graph() {
+  for (const auto &[key, value] : known_node_buffer) {
+    if (!value->top)
+      continue;
+
+    std::string prefix = "";
+    show_node(value, prefix);
   }
-};
+
+  known_node_buffer.clear();
+}
+
+void final_processing(INT32 code, VOID *v) { show_graph(); };
 
 /* ===================================================================== */
 /* Main                                                                  */
@@ -264,9 +275,6 @@ int main(int argc, char *argv[]) {
   PIN_InitSymbols();
   if (PIN_Init(argc, argv))
     return usage();
-
-  // Initialize analysis runtime structures
-  init_ins_ctx_table();
 
   // Register Instruction to be called to instrument instructions
   INS_AddInstrumentFunction(instruction, 0);

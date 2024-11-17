@@ -1,0 +1,14 @@
+0000000000001129 <main>:
+    1129:	55                   	push   %rbp
+    112a:	48 89 e5             	mov    %rsp,%rbp
+    112d:	c7 45 fc 04 00 00 00 	movl   $0x4,-0x4(%rbp)
+    1134:	c7 45 f8 03 00 00 00 	movl   $0x3,-0x8(%rbp)
+    113b:	8b 45 f8             	mov    -0x8(%rbp),%eax
+    113e:	0f af 45 fc          	imul   -0x4(%rbp),%eax
+    1142:	89 45 f4             	mov    %eax,-0xc(%rbp)
+    1145:	8b 45 f4             	mov    -0xc(%rbp),%eax
+    1148:	0f af 45 f8          	imul   -0x8(%rbp),%eax
+    114c:	89 45 f0             	mov    %eax,-0x10(%rbp)
+    114f:	b8 00 00 00 00       	mov    $0x0,%eax
+    1154:	5d                   	pop    %rbp
+    1155:	c3                   	ret
