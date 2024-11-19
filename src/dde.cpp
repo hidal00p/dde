@@ -5,6 +5,8 @@
 
 #include "graph.h"
 
+enum OperandCount { BINARY = 2 };
+
 struct variable_context {
   REG reg;
   int displacement;
@@ -18,9 +20,6 @@ struct operand_context {
   REG reg;
   bool is_mem;
 };
-
-std::map<uint32_t, node *> known_node_buffer;
-std::map<std::string, int> ins_ctx_table{{"IMUL", 2}, {"MOV", 2}};
 
 BOOL is_img_main(RTN rtn) {
   if (!RTN_Valid(rtn))
@@ -45,8 +44,9 @@ BOOL is_main_rtn(INS ins) {
           RTN_Name(rtn).find("multiply") != std::string::npos);
 }
 
+namespace binary {
 operand_context *analyze_transformation_operands(INS ins) {
-  uint operand_count = ins_ctx_table[INS_Mnemonic(ins)];
+  uint operand_count = OperandCount::BINARY;
   operand_context *op_ctx_arr = new operand_context[operand_count];
 
   for (UINT32 operand_idx = 0; operand_idx < operand_count; operand_idx++) {
@@ -131,82 +131,76 @@ BOOL transformation_candidate(INS ins) {
 }
 
 VOID insert_dag_node(const CONTEXT *ctxt, variable_context *var_ctx_arr,
-                     UINT32 operand_count, UINT instruction_type) {
-  uint64_t *ef_addr_arr = new uint64_t[operand_count + 1];
-  for (uint i = 0; i < operand_count + 1; i++) {
-    variable_context var_ctx = var_ctx_arr[i];
+                     UINT instruction_type) {
+  uint element_count = 3;
+  uint64_t *ef_addr_arr = new uint64_t[element_count];
 
+  // Collect effective mem locations
+  for (uint i = 0; i < element_count; i++) {
+    variable_context var_ctx = var_ctx_arr[i];
     PIN_GetContextRegval(ctxt, var_ctx.reg, (UINT8 *)(ef_addr_arr + i));
     ef_addr_arr[i] += var_ctx.displacement;
-
-    if (known_node_buffer.count(ef_addr_arr[i]) > 0) {
-      known_node_buffer[ef_addr_arr[i]]->top = false;
-    } else {
-      known_node_buffer[ef_addr_arr[i]] = new node(ef_addr_arr[i]);
-    }
   }
-
-  node *result_node = known_node_buffer[ef_addr_arr[operand_count]];
-  result_node->top = true;
-  result_node->transf.type = (TransfType)instruction_type;
-  result_node->transf.args = new node *[operand_count];
-  result_node->transf.argc = operand_count;
-
-  for (uint i = 0; i < operand_count; i++) {
-    result_node->transf.args[i] = known_node_buffer[ef_addr_arr[i]];
-  }
+  // Register new binary transformation
+  register_new_transformation(ef_addr_arr[0], ef_addr_arr[1], ef_addr_arr[2],
+                              (TransfType)instruction_type);
 
   delete[] ef_addr_arr;
 }
+} // namespace binary
 
 VOID instruction(INS ins, VOID *v) {
   if (!is_main_rtn(ins))
     return;
 
-  if (!transformation_candidate(ins))
-    return;
+  // Start binary operation grammar parsing
+  if (binary::transformation_candidate(ins)) {
 
-  // All memory locations eventually end up as values in registers.
-  // Hence, for indentification what we need is the register + displacement
-  // value to compute an effective address.
-  operand_context *op_ctx_arr = analyze_transformation_operands(ins);
-  variable_context *var_ctx_arr =
-      new variable_context[ins_ctx_table[INS_Mnemonic(ins)] + 1];
+    /*
+     * All memory locations eventually end up as values in registers.
+     *
+     * Hence, for indentification what we need is the register + displacement
+     * value to compute an effective address.
+     *
+     * */
+    operand_context *op_ctx_arr = binary::analyze_transformation_operands(ins);
+    variable_context *var_ctx_arr =
+        new variable_context[OperandCount::BINARY + 1];
 
-  bool all_vars_recovered = true;
-  for (int i = 0; i < ins_ctx_table[INS_Mnemonic(ins)]; i++) {
-    operand_context *op_ctx = op_ctx_arr + i;
-    variable_context *var_ctx = var_ctx_arr + i;
-    all_vars_recovered =
-        all_vars_recovered && traceback_operand_to_memory(ins, op_ctx, var_ctx);
+    bool all_vars_recovered = true;
+    for (int i = 0; i < OperandCount::BINARY; i++) {
+      operand_context *op_ctx = op_ctx_arr + i;
+      variable_context *var_ctx = var_ctx_arr + i;
+      all_vars_recovered =
+          all_vars_recovered &&
+          binary::traceback_operand_to_memory(ins, op_ctx, var_ctx);
+    }
+
+    if (!all_vars_recovered) {
+      std::cout << "Failde to recover operands for:" << std::endl;
+      std::cout << INS_Disassemble(ins) << std::endl;
+      goto clean_all;
+    }
+
+    // Here we start searching for the destination memory location
+    if (!binary::trace_result_destination(ins, op_ctx_arr + 1,
+                                          var_ctx_arr + OperandCount::BINARY)) {
+      std::cout << "Failde to recover destination location for:" << std::endl;
+      std::cout << INS_Disassemble(ins) << std::endl;
+      goto clean_all;
+    }
+
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)binary::insert_dag_node,
+                   IARG_CONST_CONTEXT, IARG_PTR, var_ctx_arr, IARG_UINT32,
+                   TransfType::IMUL, IARG_END);
+    goto clean_operand_arr;
+
+  clean_all:
+    delete[](variable_context *) var_ctx_arr;
+  clean_operand_arr:
+    delete[](operand_context *) op_ctx_arr;
   }
 
-  if (!all_vars_recovered) {
-    std::cout << "Failde to recover operands for:" << std::endl;
-    std::cout << INS_Disassemble(ins) << std::endl;
-    goto clean_all;
-  }
-
-  // Here we start searching for the destination memory location
-  if (!trace_result_destination(ins, op_ctx_arr + 1,
-                                var_ctx_arr +
-                                    ins_ctx_table[INS_Mnemonic(ins)])) {
-    std::cout << "Failde to recover destination location for:" << std::endl;
-    std::cout << INS_Disassemble(ins) << std::endl;
-    goto clean_all;
-  }
-
-  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)insert_dag_node,
-                 IARG_CONST_CONTEXT, IARG_PTR, var_ctx_arr, IARG_UINT32,
-                 ins_ctx_table[INS_Mnemonic(ins)], IARG_UINT32,
-                 TransfType::IMUL, IARG_END);
-  goto clean_operand_arr;
-
-clean_all : {
-  delete[](variable_context *) var_ctx_arr;
-clean_operand_arr:
-  delete[](operand_context *) op_ctx_arr;
-}
   return;
 }
 

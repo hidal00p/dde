@@ -27,8 +27,9 @@ struct node {
 
 extern std::map<uint32_t, node *> known_node_buffer;
 
+void register_operand(uint32_t op_id);
 void register_new_transformation(uint32_t op1_id, uint32_t op2_id,
-                                 uint32_t rest_id);
+                                 uint32_t res_id, TransfType transform);
 std::string transformation_to_str(TransfType tt);
 void show_node(node *node, std::string prefix);
 void show_graph();

@@ -1,13 +1,10 @@
 TARGETS_DIR := targets
 SRC_DIR := src
 
-%_tool:
-	$(MAKE) -C $(SRC_DIR) $*
+all: tools targets
 
 tools:
-	$(MAKE) -C $(SRC_DIR) my_tools
-
-all: tools targets
+	$(MAKE) -C $(SRC_DIR) tools
 
 targets:
 	$(MAKE) -C $(TARGETS_DIR)

@@ -10,7 +10,8 @@
 ##############################################################
 
 # If the tool is built out of the kit, PIN_ROOT must be specified in the make invocation and point to the kit root.
-MY_TOOLS := instcount dde
+MY_OBJS := graph
+MY_TOOLS := dde
 
 ifdef PIN_ROOT
 CONFIG_ROOT := $(PIN_ROOT)/source/tools/Config
@@ -20,11 +21,6 @@ endif
 include $(CONFIG_ROOT)/makefile.config
 include Makefile.rules
 include $(TOOLS_ROOT)/Config/makefile.default.rules
-
-%: %.cpp
-	$(MAKE) obj-intel64/$*$(PINTOOL_SUFFIX) TARGET=intel64
-
-my_tools: $(MY_TOOLS)
 
 ##############################################################
 #
