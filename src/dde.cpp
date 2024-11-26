@@ -39,9 +39,8 @@ BOOL is_img_main(TRACE trc) { return is_img_main(TRACE_Rtn(trc)); }
 
 BOOL is_main_rtn(INS ins) {
   RTN rtn = INS_Rtn(ins);
-  return RTN_Valid(rtn) &&
-         (RTN_Name(rtn) == "main" ||
-          RTN_Name(rtn).find("multiply") != std::string::npos);
+  return RTN_Valid(rtn) && (RTN_Name(rtn) == "main" ||
+                            RTN_Name(rtn).find("foo") != std::string::npos);
 }
 
 namespace binary {
