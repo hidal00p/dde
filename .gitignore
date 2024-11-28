@@ -13,3 +13,6 @@ compile_commands.json
 *.out
 pin.log
 pintool.log
+
+# Python env
+venv/

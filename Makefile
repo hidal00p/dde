@@ -11,6 +11,7 @@ targets:
 
 format:
 	clang-format -i $(SRC_DIR)/*.cpp $(SRC_DIR)/*.h $(TARGETS_DIR)/*.cpp
+	black scripts/*.py
 
 clean:
 	rm -rf *.out

@@ -118,7 +118,8 @@ void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx) {
   if (add_ctx->src_type == binary_op::type::IMM) {
     sum += add_ctx->src.imm;
     node **oprs = new node *[] { reg::expect_node(add_ctx->dest.reg) };
-    reg::insert_node(add_ctx->dest.reg, new node(sum, 1, oprs));
+    reg::insert_node(add_ctx->dest.reg,
+                     new node(sum, 1, oprs, transformation::ADD));
     return;
   }
 
@@ -128,7 +129,8 @@ void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx) {
           : mem::expect_node(add_ctx->src.mem.get_effective_addr(ctx));
   sum += src_node->value;
   node **oprs = new node *[] { reg::expect_node(add_ctx->dest.reg), src_node };
-  reg::insert_node(add_ctx->dest.reg, new node(sum, 2, oprs));
+  reg::insert_node(add_ctx->dest.reg,
+                   new node(sum, 2, oprs, transformation::ADD));
 }
 
 void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx) {
@@ -147,7 +149,8 @@ void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx) {
   if (mul_ctx->src_type == binary_op::type::IMM) {
     prod *= mul_ctx->src.imm;
     node **oprs = new node *[] { reg::expect_node(mul_ctx->dest.reg) };
-    reg::insert_node(mul_ctx->dest.reg, new node(prod, 1, oprs));
+    reg::insert_node(mul_ctx->dest.reg,
+                     new node(prod, 1, oprs, transformation::MUL));
     return;
   }
 
@@ -157,7 +160,8 @@ void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx) {
           : mem::expect_node(mul_ctx->src.mem.get_effective_addr(ctx));
   prod *= src_node->value;
   node **oprs = new node *[] { reg::expect_node(mul_ctx->dest.reg), src_node };
-  reg::insert_node(mul_ctx->dest.reg, new node(prod, 2, oprs));
+  reg::insert_node(mul_ctx->dest.reg,
+                   new node(prod, 2, oprs, transformation::MUL));
 }
 
 } // namespace analysis

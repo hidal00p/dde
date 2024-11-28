@@ -10,6 +10,8 @@
  *
  * NOTE: might want to wrap things into a shared_ptr
  */
+enum transformation { NONE, MUL, ADD };
+
 std::string get_uuid();
 
 struct node;
@@ -19,19 +21,22 @@ struct node {
   int value;
   node **operands;
   uint8_t n_operands;
+  transformation tr;
 
   node(int val) {
     uuid = get_uuid();
     value = val;
     operands = nullptr;
     n_operands = 0;
+    tr = transformation::NONE;
   }
 
-  node(int val, uint8_t n_oprs, node **oprs) {
+  node(int val, uint8_t n_oprs, node **oprs, transformation trn) {
     uuid = get_uuid();
     value = val;
     operands = oprs;
     n_operands = n_oprs;
+    tr = trn;
   }
 };
 

@@ -28,9 +28,9 @@ int main() {
   int x = 3; // Direct declaration
   int y = 4;
 
-  int c = x * y + 5;
+  int c = x * y;
 
-  y = 2 * x; // Declaraton via the intermediate calculation
+  y = 2 * x;     // Declaraton via the intermediate calculation
   x = y * y * x; // Override via the intermediate calculation
 
   return 0;

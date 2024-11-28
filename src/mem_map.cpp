@@ -23,7 +23,11 @@ std::string get_uuid() {
 }
 
 void show_node(node *n, std::string prefix) {
-  std::cout << prefix << n->uuid << " -> " << std::dec << n->value << std::endl;
+  std::cout << prefix << n->uuid << " -> " << std::dec << n->value;
+  std::string tr_str = n->tr == transformation::NONE  ? ""
+                       : n->tr == transformation::ADD ? "+"
+                                                      : "*";
+  std::cout << " " << tr_str << " " << std::endl;
 
   for (uint i = 0; i < n->n_operands; i++) {
     show_node(n->operands[i], prefix + " ");
