@@ -21,11 +21,15 @@ class Graph:
     def __init__(self, graph_path: pathlib.Path):
         self.graph_path = graph_path
         self.node_map = {}
-        self.result = None
+        self.results = []
+        self.evaluated_nodes = []
 
     def parse_graph(self) -> "Graph":
         with open(self.graph_path) as self.graph_file:
-            self.result = self.parse_node(self.graph_file.readline())
+
+            while res_raw_gene := self.graph_file.readline():
+                self.results.append(self.parse_node(res_raw_gene))
+
         return self
 
     def parse_node(self, raw_gene: str) -> Node:
@@ -38,6 +42,7 @@ class Graph:
 
         # If node was parsed before we just return it
         if node := self.node_map.get(gene.uuid):
+            self.consume_node(node)
             return node
 
         parents = []
@@ -52,11 +57,32 @@ class Graph:
 
         return node
 
+    def consume_node(self, node: Node):
+        for p_node in node.parents:
+            self.graph_file.readline()
+            self.consume_node(p_node)
+
     def eval_jacobian(self):
-        assert self.result
-        self.result.der = 1.0
-        self.propagate_derivative(self.result)
-        return self
+        assert self.results
+
+        for result in self.results:
+            if result.der > 0.0:
+                continue
+
+            result.der = 1.0
+            self.clear_derivtives(result)
+            self.propagate_derivative(result)
+            self.show_derivatives(result)
+
+    def show_derivatives(self, node: Node, prefix=""):
+        print(f"{prefix} {node.gene.uuid} {node.der}")
+        for p_node in node.parents:
+            self.show_derivatives(p_node, prefix + " ")
+
+    def clear_derivtives(self, node: Node):
+        for p_node in node.parents:
+            p_node.der = 0.0
+            self.clear_derivtives(p_node)
 
     def propagate_derivative(self, lhs_node: Node):
         if not (op := lhs_node.gene.op):
@@ -72,21 +98,20 @@ class Graph:
             rhs_op0.der += lhs_node.der
             rhs_op1.der += lhs_node.der
 
-        self.propagate_derivative(rhs_op0)
+        if rhs_op0 not in self.evaluated_nodes:
+            self.propagate_derivative(rhs_op0)
+            self.evaluated_nodes.append(rhs_op0)
 
-        if rhs_op0 == rhs_op1:
-            return
-
-        self.propagate_derivative(rhs_op1)
+        if rhs_op1 not in self.evaluated_nodes:
+            self.propagate_derivative(rhs_op1)
+            self.evaluated_nodes.append(rhs_op1)
 
 
 def main():
     graph_path = pathlib.Path("./prog.gr")
     assert graph_path.exists()
 
-    graph = Graph(graph_path).parse_graph().eval_jacobian()
-    for k, v in graph.node_map.items():
-        print(f"{k} {v.der}")
+    Graph(graph_path).parse_graph().eval_jacobian()
 
 
 if __name__ == "__main__":

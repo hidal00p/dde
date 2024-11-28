@@ -25,13 +25,13 @@
  */
 
 int main() {
-  int x = 3; // Direct declaration
+  int x = 3;
   int y = 4;
 
-  int c = x * y;
+  int z = x * x * y;
+  int c = 6 * x * z;
 
-  y = 2 * x;     // Declaraton via the intermediate calculation
-  x = y * y * x; // Override via the intermediate calculation
+  x = y * c;
 
   return 0;
 }
