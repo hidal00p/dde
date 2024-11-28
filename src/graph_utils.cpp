@@ -1,4 +1,4 @@
-#include "mem_map.h"
+#include "graph_utils.h"
 #include <cassert>
 #include <iostream>
 #include <random>
@@ -36,7 +36,6 @@ void show_node(node *n, std::string prefix) {
 
 void show_mem_map() {
   for (const auto &[addr, node] : mem_map) {
-    std::cout << "0x" << std::hex << addr << ": " << std::endl;
     show_node(node, "");
   }
 }

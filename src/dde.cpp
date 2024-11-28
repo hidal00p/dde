@@ -1,25 +1,56 @@
 #include "pin.H"
+#include <cassert>
 #include <iostream>
 #include <map>
 #include <string>
 
-#include "graph.h"
+#include "graph_utils.h"
 
-enum OperandCount { BINARY = 2 };
-
-struct variable_context {
+struct MEM {
   REG reg;
-  int displacement;
+  int8_t disp;
+
+  uint64_t get_effective_addr(CONTEXT *ctx) {
+    uint64_t ef_addr;
+    PIN_GetContextRegval(ctx, reg, (uint8_t *)&ef_addr);
+    ef_addr += disp;
+    return ef_addr;
+  }
 };
 
-struct operand_context {
-  // Operand ordinals within an instruction
-  uint pin_idx;
-  uint assembly_idx;
-  // Register
+namespace binary_op {
+typedef union {
   REG reg;
-  bool is_mem;
+  uint64_t imm;
+  MEM mem;
+} operand;
+
+enum type { IMM, REG, MEM };
+struct ctx {
+  type src_type;
+  operand src;
+
+  type dest_type;
+  operand dest;
 };
+
+void show_operand(CONTEXT *ctx, type t, operand opr) {
+  switch (t) {
+  case type::IMM:
+    std::cout << opr.imm;
+    break;
+  case type::REG:
+    std::cout << REG_StringShort(opr.reg);
+    break;
+  case type::MEM:
+    uint64_t eff_addr;
+    PIN_GetContextRegval(ctx, opr.mem.reg, (uint8_t *)&eff_addr);
+    eff_addr += opr.mem.disp;
+    std::cout << "0x" << std::hex << eff_addr;
+    break;
+  }
+}
+} // namespace binary_op
 
 BOOL is_img_main(RTN rtn) {
   if (!RTN_Valid(rtn))
@@ -35,172 +66,181 @@ BOOL is_img_main(RTN rtn) {
 
 BOOL is_img_main(INS ins) { return is_img_main(INS_Rtn(ins)); }
 
-BOOL is_img_main(TRACE trc) { return is_img_main(TRACE_Rtn(trc)); }
-
 BOOL is_main_rtn(INS ins) {
   RTN rtn = INS_Rtn(ins);
-  return RTN_Valid(rtn) && (RTN_Name(rtn) == "main" ||
-                            RTN_Name(rtn).find("foo") != std::string::npos);
+  return RTN_Valid(rtn) && RTN_Name(rtn) == "main";
 }
 
-namespace binary {
-operand_context *analyze_transformation_operands(INS ins) {
-  uint operand_count = OperandCount::BINARY;
-  operand_context *op_ctx_arr = new operand_context[operand_count];
+namespace analysis {
+void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx) {
+#ifdef VERBOSE
+  show_operand(ctx, mov_ctx->dest_type, mov_ctx->dest);
+  std::cout << " <-- ";
+  show_operand(ctx, mov_ctx->src_type, mov_ctx->src);
+  std::cout << std::endl;
+#endif
 
-  for (UINT32 operand_idx = 0; operand_idx < operand_count; operand_idx++) {
-    operand_context *op_ctx = op_ctx_arr + operand_idx;
-    op_ctx->pin_idx = operand_count - operand_idx - 1;
-    op_ctx->assembly_idx = operand_idx;
-    op_ctx->is_mem = INS_OperandIsMemory(ins, op_ctx->pin_idx);
-    op_ctx->reg =
-        !op_ctx->is_mem ? INS_OperandReg(ins, op_ctx->pin_idx) : REG_INVALID();
-  }
-
-  return op_ctx_arr;
-}
-
-BOOL trace_result_destination(INS ins, operand_context *acc_op_ctx,
-                              variable_context *dest_var_ctx) {
-  assert(!acc_op_ctx->is_mem);
-  assert(REG_valid(acc_op_ctx->reg));
-
-  int max_forward_count = 2;
-  while ((max_forward_count--) > 0) {
-    INS next_ins = INS_Next(ins);
-    if (!(INS_Valid(next_ins) && INS_IsMov(next_ins))) {
-      ins = next_ins;
-      continue;
+  if (mov_ctx->dest_type == binary_op::type::MEM) {
+    uint64_t ef_addr = mov_ctx->dest.mem.get_effective_addr(ctx);
+    if (mov_ctx->src_type == binary_op::type::IMM) {
+      mem::insert_node(ef_addr, new node(mov_ctx->src.imm));
+    } else if (mov_ctx->src_type == binary_op::type::REG) {
+      reg::write_to_mem(mov_ctx->src.reg, ef_addr);
     }
-
-    REG source_reg = INS_OperandReg(next_ins, 1);
-    bool destination_found =
-        INS_OperandIsMemory(next_ins, 0) && source_reg == acc_op_ctx->reg;
-    if (!destination_found) {
-      ins = next_ins;
-      continue;
+  } else if (mov_ctx->dest_type == binary_op::type::REG) {
+    if (mov_ctx->src_type == binary_op::type::IMM) {
+      reg::insert_node(mov_ctx->dest.reg, new node(mov_ctx->src.imm));
+    } else if (mov_ctx->src_type == binary_op::type::REG) {
+      reg::write_to_other_reg(mov_ctx->src.reg, mov_ctx->dest.reg);
+    } else if (mov_ctx->src_type == binary_op::type::MEM) {
+      mem::write_to_reg(mov_ctx->src.mem.get_effective_addr(ctx),
+                        mov_ctx->dest.reg);
     }
-
-    dest_var_ctx->reg = INS_OperandMemoryBaseReg(next_ins, 0);
-    dest_var_ctx->displacement = INS_OperandMemoryDisplacement(next_ins, 0);
-    return true;
+  } else {
+    assert(false);
   }
-
-  return false;
 }
 
-BOOL traceback_operand_to_memory(INS ins, operand_context *op_ctx,
-                                 variable_context *var_ctx) {
-  if (op_ctx->is_mem) {
-    var_ctx->reg = INS_OperandMemoryBaseReg(ins, op_ctx->pin_idx);
-    var_ctx->displacement = INS_OperandMemoryDisplacement(ins, op_ctx->pin_idx);
-    return true;
+void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx) {
+#ifdef VERBOSE
+  show_operand(ctx, add_ctx->dest_type, add_ctx->dest);
+  std::cout << " <-- ";
+  show_operand(ctx, add_ctx->src_type, add_ctx->src);
+  std::cout << " + ";
+  show_operand(ctx, add_ctx->dest_type, add_ctx->dest);
+  std::cout << std::endl;
+#endif
+
+  // It is implied that the 2nd operand is a register
+  int sum;
+  PIN_GetContextRegval(ctx, add_ctx->dest.reg, (uint8_t *)&sum);
+  if (add_ctx->src_type == binary_op::type::IMM) {
+    sum += add_ctx->src.imm;
+    node **oprs = new node *[] { reg::expect_node(add_ctx->dest.reg) };
+    reg::insert_node(add_ctx->dest.reg,
+                     new node(sum, 1, oprs, transformation::ADD));
+    return;
   }
 
-  int max_traceback_count = 3;
-  while ((max_traceback_count--) > 0) {
-    INS prev_ins = INS_Prev(ins);
-    if (!(INS_Valid(prev_ins) && INS_IsMov(prev_ins))) {
-      ins = prev_ins;
-      continue;
-    }
+  node *src_node =
+      add_ctx->src_type == binary_op::type::REG
+          ? reg::expect_node(add_ctx->src.reg)
+          : mem::expect_node(add_ctx->src.mem.get_effective_addr(ctx));
+  sum += src_node->value;
+  node **oprs = new node *[] { reg::expect_node(add_ctx->dest.reg), src_node };
+  reg::insert_node(add_ctx->dest.reg,
+                   new node(sum, 2, oprs, transformation::ADD));
+}
 
-    REG load_reg = INS_OperandReg(prev_ins, 0);
-    bool var_recovered =
-        INS_OperandIsMemory(prev_ins, 1) && load_reg == op_ctx->reg;
+void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx) {
+#ifdef VERBOSE
+  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
+  std::cout << " <-- ";
+  show_operand(ctx, mul_ctx->src_type, mul_ctx->src);
+  std::cout << " * ";
+  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
+  std::cout << std::endl;
+#endif
 
-    if (!var_recovered) {
-      ins = prev_ins;
-      continue;
-    }
-
-    var_ctx->reg = INS_OperandMemoryBaseReg(prev_ins, 1);
-    var_ctx->displacement = INS_OperandMemoryDisplacement(prev_ins, 1);
-    return true;
+  // It is implied that the 2nd operand is a register
+  int prod;
+  PIN_GetContextRegval(ctx, mul_ctx->dest.reg, (uint8_t *)&prod);
+  if (mul_ctx->src_type == binary_op::type::IMM) {
+    prod *= mul_ctx->src.imm;
+    node **oprs = new node *[] { reg::expect_node(mul_ctx->dest.reg) };
+    reg::insert_node(mul_ctx->dest.reg,
+                     new node(prod, 1, oprs, transformation::MUL));
+    return;
   }
 
-  std::cout << "Failed to recover operand " << op_ctx->assembly_idx
-            << " as a variable." << std::endl;
-  return false;
+  node *src_node =
+      mul_ctx->src_type == binary_op::type::REG
+          ? reg::expect_node(mul_ctx->src.reg)
+          : mem::expect_node(mul_ctx->src.mem.get_effective_addr(ctx));
+  prod *= src_node->value;
+  node **oprs = new node *[] { reg::expect_node(mul_ctx->dest.reg), src_node };
+  reg::insert_node(mul_ctx->dest.reg,
+                   new node(prod, 2, oprs, transformation::MUL));
 }
 
-BOOL transformation_candidate(INS ins) {
-  std::string mnemonic = INS_Mnemonic(ins);
-  return mnemonic == "MUL" || mnemonic == "IMUL" || mnemonic == "ADD";
-}
+} // namespace analysis
 
-VOID insert_dag_node(const CONTEXT *ctxt, variable_context *var_ctx_arr,
-                     UINT instruction_type) {
-  uint element_count = 3;
-  uint64_t *ef_addr_arr = new uint64_t[element_count];
+namespace inst_handler {
+binary_op::ctx *handle_bop(INS ins) {
+  static const uint8_t SRC_IDX = 1, DEST_IDX = 0;
+  binary_op::ctx *bop_ctx = new binary_op::ctx();
 
-  // Collect effective mem locations
-  for (uint i = 0; i < element_count; i++) {
-    variable_context var_ctx = var_ctx_arr[i];
-    PIN_GetContextRegval(ctxt, var_ctx.reg, (UINT8 *)(ef_addr_arr + i));
-    ef_addr_arr[i] += var_ctx.displacement;
+  if (INS_OperandIsMemory(ins, DEST_IDX)) {
+    bop_ctx->dest_type = binary_op::type::MEM;
+    bop_ctx->dest = {
+        .mem = {INS_OperandMemoryBaseReg(ins, DEST_IDX),
+                (int8_t)INS_OperandMemoryDisplacement(ins, DEST_IDX)}};
+  } else if (INS_OperandIsReg(ins, DEST_IDX)) {
+    bop_ctx->dest_type = binary_op::type::REG;
+    bop_ctx->dest = {.reg = INS_OperandReg(ins, DEST_IDX)};
+  } else {
+    assert(false);
   }
-  // Register new binary transformation
-  register_new_transformation(ef_addr_arr[0], ef_addr_arr[1], ef_addr_arr[2],
-                              (TransfType)instruction_type);
 
-  delete[] ef_addr_arr;
+  if (INS_OperandIsImmediate(ins, SRC_IDX)) {
+    bop_ctx->src_type = binary_op::type::IMM;
+    bop_ctx->src = {.imm = INS_OperandImmediate(ins, SRC_IDX)};
+  } else if (INS_OperandIsReg(ins, SRC_IDX)) {
+    bop_ctx->src_type = binary_op::type::REG;
+    bop_ctx->src = {.reg = INS_OperandReg(ins, SRC_IDX)};
+  } else if (INS_OperandIsMemory(ins, SRC_IDX)) {
+    bop_ctx->src_type = binary_op::type::MEM;
+    bop_ctx->src = {
+        .mem = {INS_OperandMemoryBaseReg(ins, SRC_IDX),
+                (int8_t)INS_OperandMemoryDisplacement(ins, SRC_IDX)}};
+  } else {
+    assert(false);
+  }
+
+  return bop_ctx;
 }
-} // namespace binary
+
+void handle_mov(INS ins) {
+  binary_op::ctx *mov_ctx = handle_bop(ins);
+
+  // Ignore stack pointer stuff
+  if (mov_ctx->src_type == binary_op::type::REG && mov_ctx->src.reg == REG_RSP)
+    return;
+
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
+                 IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_END);
+}
+
+void handle_add(INS ins) {
+  binary_op::ctx *add_ctx = handle_bop(ins);
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_add,
+                 IARG_CONST_CONTEXT, IARG_PTR, add_ctx, IARG_END);
+}
+void handle_mul(INS ins) {
+  binary_op::ctx *mul_ctx = handle_bop(ins);
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mul,
+                 IARG_CONST_CONTEXT, IARG_PTR, mul_ctx, IARG_END);
+}
+} // namespace inst_handler
 
 VOID instruction(INS ins, VOID *v) {
   if (!is_main_rtn(ins))
     return;
 
-  // Start binary operation grammar parsing
-  if (binary::transformation_candidate(ins)) {
-
-    /*
-     * All memory locations eventually end up as values in registers.
-     *
-     * Hence, for indentification what we need is the register + displacement
-     * value to compute an effective address.
-     *
-     * */
-    operand_context *op_ctx_arr = binary::analyze_transformation_operands(ins);
-    variable_context *var_ctx_arr =
-        new variable_context[OperandCount::BINARY + 1];
-
-    bool all_vars_recovered = true;
-    for (int i = 0; i < OperandCount::BINARY; i++) {
-      operand_context *op_ctx = op_ctx_arr + i;
-      variable_context *var_ctx = var_ctx_arr + i;
-      all_vars_recovered =
-          all_vars_recovered &&
-          binary::traceback_operand_to_memory(ins, op_ctx, var_ctx);
-    }
-
-    if (!all_vars_recovered) {
-      std::cout << "Failde to recover operands for:" << std::endl;
-      std::cout << INS_Disassemble(ins) << std::endl;
-      goto clean_all;
-    }
-
-    // Here we start searching for the destination memory location
-    if (!binary::trace_result_destination(ins, op_ctx_arr + 1,
-                                          var_ctx_arr + OperandCount::BINARY)) {
-      std::cout << "Failde to recover destination location for:" << std::endl;
-      std::cout << INS_Disassemble(ins) << std::endl;
-      goto clean_all;
-    }
-
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)binary::insert_dag_node,
-                   IARG_CONST_CONTEXT, IARG_PTR, var_ctx_arr, IARG_UINT32,
-                   TransfType::IMUL, IARG_END);
-    goto clean_operand_arr;
-
-  clean_all:
-    delete[](variable_context *) var_ctx_arr;
-  clean_operand_arr:
-    delete[](operand_context *) op_ctx_arr;
+  if (INS_IsMov(ins)) {
+    inst_handler::handle_mov(ins);
+    return;
   }
 
-  return;
+  if (INS_Mnemonic(ins) == "IMUL") {
+    inst_handler::handle_mul(ins);
+    return;
+  }
+
+  if (INS_Mnemonic(ins) == "ADD") {
+    inst_handler::handle_add(ins);
+    return;
+  }
 }
 
 /* ===================================================================== */
@@ -214,48 +254,7 @@ INT32 usage() {
   return -1;
 }
 
-std::string transf_type_to_string(TransfType tt) {
-  switch (tt) {
-  case TransfType::IMUL:
-    return "*";
-  case TransfType::ADD:
-    return "+";
-  case TransfType::SUB:
-    return "-";
-  default:
-    break;
-  };
-  return "";
-}
-
-void show_node(node *node, std::string prefix) {
-  std::cout << prefix << "0x" << std::hex << node->id;
-
-  if (node->transf.args == nullptr) {
-    std::cout << std::endl;
-    return;
-  }
-
-  std::cout << " " << transf_type_to_string(node->transf.type) << std::endl;
-
-  for (uint8_t i = 0; i < node->transf.argc; i++) {
-    show_node(node->transf.args[i], prefix + " ");
-  }
-}
-
-void show_graph() {
-  for (const auto &[key, value] : known_node_buffer) {
-    if (!value->top)
-      continue;
-
-    std::string prefix = "";
-    show_node(value, prefix);
-  }
-
-  known_node_buffer.clear();
-}
-
-void final_processing(INT32 code, VOID *v) { show_graph(); };
+void final_processing(INT32 code, VOID *v) { show_mem_map(); }
 
 /* ===================================================================== */
 /* Main                                                                  */

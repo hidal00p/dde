@@ -10,8 +10,8 @@
 ##############################################################
 
 # If the tool is built out of the kit, PIN_ROOT must be specified in the make invocation and point to the kit root.
-MY_OBJS := mem_map
-MY_TOOLS := var_extraction
+MY_OBJS := graph_utils
+MY_TOOLS := dde
 
 ifdef PIN_ROOT
 CONFIG_ROOT := $(PIN_ROOT)/source/tools/Config
