@@ -71,6 +71,7 @@ class Graph:
 
             result.der = 1.0
             self.clear_derivtives(result)
+            self.evaluated_nodes.clear()
             self.propagate_derivative(result)
             self.show_derivatives(result)
 
