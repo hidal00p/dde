@@ -25,13 +25,9 @@
  */
 
 int main() {
-  int x = 3;
-  int y = 4;
+  int x = 2;
+  int y = 3;
 
-  int z = x * x * y;
-  int c = 6 * x * z;
-
-  x = y * c;
-
+  int z = x * y + 5;
   return 0;
 }

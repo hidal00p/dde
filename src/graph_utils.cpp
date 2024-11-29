@@ -23,7 +23,9 @@ std::string get_uuid() {
 }
 
 void show_node(node *n, std::string prefix) {
-  std::cout << prefix << n->uuid << " -> " << std::dec << n->value;
+  std::cout << prefix << n->uuid << " " << std::dec << n->value << " "
+            << n->is_active;
+
   std::string tr_str = n->tr == transformation::NONE  ? ""
                        : n->tr == transformation::ADD ? "+"
                                                       : "*";
@@ -35,8 +37,10 @@ void show_node(node *n, std::string prefix) {
 }
 
 void show_mem_map() {
-  for (const auto &[addr, node] : mem_map) {
-    show_node(node, "");
+  for (const auto &[addr, n] : mem_map) {
+    if (n->operands == nullptr)
+      continue;
+    show_node(n, "");
   }
 }
 

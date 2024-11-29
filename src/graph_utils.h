@@ -18,17 +18,15 @@ struct node;
 
 struct node {
   std::string uuid;
+  bool is_active = true;
   int value;
-  node **operands;
-  uint8_t n_operands;
-  transformation tr;
+  node **operands = nullptr;
+  uint8_t n_operands = 0;
+  transformation tr = transformation::NONE;
 
   node(int val) {
     uuid = get_uuid();
     value = val;
-    operands = nullptr;
-    n_operands = 0;
-    tr = transformation::NONE;
   }
 
   node(int val, uint8_t n_oprs, node **oprs, transformation trn) {

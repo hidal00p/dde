@@ -6,6 +6,7 @@ from dataclasses import dataclass
 class NodeGene(NamedTuple):
     uuid: str
     value: int
+    is_active: bool
     op: str | None
 
 
@@ -36,7 +37,8 @@ class Graph:
         gene_atoms = raw_gene.split()
         gene = NodeGene(
             gene_atoms[0],
-            int(gene_atoms[2]),
+            int(gene_atoms[1]),
+            gene_atoms[2] == "1",
             None if len(gene_atoms) == 3 else gene_atoms[3],
         )
 
@@ -93,17 +95,21 @@ class Graph:
         rhs_op1 = lhs_node.parents[1]
 
         if op == "*":
-            rhs_op0.der += rhs_op1.gene.value * lhs_node.der
-            rhs_op1.der += rhs_op0.gene.value * lhs_node.der
+            rhs_op0.der += (
+                rhs_op1.gene.value * lhs_node.der if rhs_op0.gene.is_active else 0.0
+            )
+            rhs_op1.der += (
+                rhs_op0.gene.value * lhs_node.der if rhs_op1.gene.is_active else 0.0
+            )
         elif op == "+":
-            rhs_op0.der += lhs_node.der
-            rhs_op1.der += lhs_node.der
+            rhs_op0.der += lhs_node.der if rhs_op0.gene.is_active else 0.0
+            rhs_op1.der += lhs_node.der if rhs_op1.gene.is_active else 0.0
 
-        if rhs_op0 not in self.evaluated_nodes:
+        if rhs_op0.gene.is_active and rhs_op0 not in self.evaluated_nodes:
             self.propagate_derivative(rhs_op0)
             self.evaluated_nodes.append(rhs_op0)
 
-        if rhs_op1 not in self.evaluated_nodes:
+        if rhs_op1.gene.is_active and rhs_op1 not in self.evaluated_nodes:
             self.propagate_derivative(rhs_op1)
             self.evaluated_nodes.append(rhs_op1)
 

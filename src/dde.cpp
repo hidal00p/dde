@@ -113,19 +113,18 @@ void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx) {
 
   // It is implied that the 2nd operand is a register
   int sum;
+  node *src_node;
   PIN_GetContextRegval(ctx, add_ctx->dest.reg, (uint8_t *)&sum);
+
   if (add_ctx->src_type == binary_op::type::IMM) {
-    sum += add_ctx->src.imm;
-    node **oprs = new node *[] { reg::expect_node(add_ctx->dest.reg) };
-    reg::insert_node(add_ctx->dest.reg,
-                     new node(sum, 1, oprs, transformation::ADD));
-    return;
+    src_node = new node(add_ctx->src.imm);
+    src_node->is_active = false;
+  } else {
+    src_node = add_ctx->src_type == binary_op::type::REG
+                   ? reg::expect_node(add_ctx->src.reg)
+                   : mem::expect_node(add_ctx->src.mem.get_effective_addr(ctx));
   }
 
-  node *src_node =
-      add_ctx->src_type == binary_op::type::REG
-          ? reg::expect_node(add_ctx->src.reg)
-          : mem::expect_node(add_ctx->src.mem.get_effective_addr(ctx));
   sum += src_node->value;
   node **oprs = new node *[] { reg::expect_node(add_ctx->dest.reg), src_node };
   reg::insert_node(add_ctx->dest.reg,
@@ -144,19 +143,18 @@ void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx) {
 
   // It is implied that the 2nd operand is a register
   int prod;
+  node *src_node;
   PIN_GetContextRegval(ctx, mul_ctx->dest.reg, (uint8_t *)&prod);
+
   if (mul_ctx->src_type == binary_op::type::IMM) {
-    prod *= mul_ctx->src.imm;
-    node **oprs = new node *[] { reg::expect_node(mul_ctx->dest.reg) };
-    reg::insert_node(mul_ctx->dest.reg,
-                     new node(prod, 1, oprs, transformation::MUL));
-    return;
+    src_node = new node(mul_ctx->src.imm);
+    src_node->is_active = false;
+  } else {
+    src_node = mul_ctx->src_type == binary_op::type::REG
+                   ? reg::expect_node(mul_ctx->src.reg)
+                   : mem::expect_node(mul_ctx->src.mem.get_effective_addr(ctx));
   }
 
-  node *src_node =
-      mul_ctx->src_type == binary_op::type::REG
-          ? reg::expect_node(mul_ctx->src.reg)
-          : mem::expect_node(mul_ctx->src.mem.get_effective_addr(ctx));
   prod *= src_node->value;
   node **oprs = new node *[] { reg::expect_node(mul_ctx->dest.reg), src_node };
   reg::insert_node(mul_ctx->dest.reg,

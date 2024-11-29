@@ -105,25 +105,20 @@ Disassembly of section .text:
     1129:	f3 0f 1e fa          	endbr64 
     112d:	55                   	push   %rbp
     112e:	48 89 e5             	mov    %rsp,%rbp
-    1131:	c7 45 f4 03 00 00 00 	movl   $0x3,-0xc(%rbp)
-    1138:	c7 45 f8 04 00 00 00 	movl   $0x4,-0x8(%rbp)
+    1131:	c7 45 f4 02 00 00 00 	movl   $0x2,-0xc(%rbp)
+    1138:	c7 45 f8 01 00 00 00 	movl   $0x1,-0x8(%rbp)
     113f:	8b 45 f4             	mov    -0xc(%rbp),%eax
     1142:	0f af 45 f8          	imul   -0x8(%rbp),%eax
-    1146:	89 45 fc             	mov    %eax,-0x4(%rbp)
-    1149:	8b 45 f4             	mov    -0xc(%rbp),%eax
-    114c:	01 c0                	add    %eax,%eax
-    114e:	89 45 f8             	mov    %eax,-0x8(%rbp)
-    1151:	8b 45 f8             	mov    -0x8(%rbp),%eax
-    1154:	0f af c0             	imul   %eax,%eax
-    1157:	89 45 f4             	mov    %eax,-0xc(%rbp)
-    115a:	b8 00 00 00 00       	mov    $0x0,%eax
-    115f:	5d                   	pop    %rbp
-    1160:	c3                   	ret    
+    1146:	83 c0 05             	add    $0x5,%eax
+    1149:	89 45 fc             	mov    %eax,-0x4(%rbp)
+    114c:	b8 00 00 00 00       	mov    $0x0,%eax
+    1151:	5d                   	pop    %rbp
+    1152:	c3                   	ret    
 
 Disassembly of section .fini:
 
-0000000000001164 <_fini>:
-    1164:	f3 0f 1e fa          	endbr64 
-    1168:	48 83 ec 08          	sub    $0x8,%rsp
-    116c:	48 83 c4 08          	add    $0x8,%rsp
-    1170:	c3                   	ret    
+0000000000001154 <_fini>:
+    1154:	f3 0f 1e fa          	endbr64 
+    1158:	48 83 ec 08          	sub    $0x8,%rsp
+    115c:	48 83 c4 08          	add    $0x8,%rsp
+    1160:	c3                   	ret    
