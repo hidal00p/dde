@@ -1,3 +1,4 @@
+#!/home/hidaloop/.folder/random/pinenv/dde/scripts/venv/bin/python
 import pathlib
 from typing import NamedTuple
 from dataclasses import dataclass
@@ -5,7 +6,7 @@ from dataclasses import dataclass
 
 class NodeGene(NamedTuple):
     uuid: str
-    value: int
+    value: float
     is_active: bool
     op: str | None
 
@@ -23,7 +24,8 @@ class Graph:
         self.graph_path = graph_path
         self.node_map = {}
         self.results = []
-        self.evaluated_nodes = []
+        self.visited_nodes = set()
+        self.ordered_graph = []
 
     def parse_graph(self) -> "Graph":
         with open(self.graph_path) as self.graph_file:
@@ -37,7 +39,7 @@ class Graph:
         gene_atoms = raw_gene.split()
         gene = NodeGene(
             gene_atoms[0],
-            int(gene_atoms[1]),
+            float(gene_atoms[1]),
             gene_atoms[2] == "1",
             None if len(gene_atoms) == 3 else gene_atoms[3],
         )
@@ -73,8 +75,12 @@ class Graph:
 
             result.der = 1.0
             self.clear_derivtives(result)
-            self.evaluated_nodes.clear()
-            self.propagate_derivative(result)
+            self.visited_nodes.clear()
+
+            self.order_graph(result)
+            for node in reversed(self.ordered_graph):
+                self.propagate_derivative(node)
+
             self.show_derivatives(result)
 
     def show_derivatives(self, node: Node, prefix=""):
@@ -86,6 +92,16 @@ class Graph:
         for p_node in node.parents:
             p_node.der = 0.0
             self.clear_derivtives(p_node)
+
+    def order_graph(self, node: Node):
+        if node.gene.uuid in self.visited_nodes:
+            return
+
+        self.visited_nodes.add(node.gene.uuid)
+        for p_node in node.parents:
+            self.order_graph(p_node)
+
+        self.ordered_graph.append(node)
 
     def propagate_derivative(self, lhs_node: Node):
         if not (op := lhs_node.gene.op):
@@ -104,14 +120,6 @@ class Graph:
         elif op == "+":
             rhs_op0.der += lhs_node.der if rhs_op0.gene.is_active else 0.0
             rhs_op1.der += lhs_node.der if rhs_op1.gene.is_active else 0.0
-
-        if rhs_op0.gene.is_active and rhs_op0 not in self.evaluated_nodes:
-            self.propagate_derivative(rhs_op0)
-            self.evaluated_nodes.append(rhs_op0)
-
-        if rhs_op1.gene.is_active and rhs_op1 not in self.evaluated_nodes:
-            self.propagate_derivative(rhs_op1)
-            self.evaluated_nodes.append(rhs_op1)
 
 
 def main():

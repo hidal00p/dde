@@ -24,10 +24,20 @@
  *
  */
 
-int main() {
-  int x = 2;
-  int y = 3;
+/*
+ * Dealing with fps has a slight difference, in particular,
+ * because variable initialization begins by reading form memory.
+ *
+ */
 
-  int z = x * y + 5;
+int main() {
+  double x = 1.5;
+  double y = 1.25;
+  double z = x * y * y;
+
+  double w = z * x + 0.95;
+  double v = z * y;
+
+  double c = w * v;
   return 0;
 }
