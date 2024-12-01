@@ -1,9 +1,6 @@
 #include "pin_utils.h"
 #include <cassert>
 #include <iostream>
-#include <map>
-#include <string>
-#include <stdio.h>
 
 #include "graph_utils.h"
 
