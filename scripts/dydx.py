@@ -76,6 +76,7 @@ class Graph:
             result.der = 1.0
             self.clear_derivtives(result)
             self.visited_nodes.clear()
+            self.ordered_graph.clear()
 
             self.order_graph(result)
             for node in reversed(self.ordered_graph):
