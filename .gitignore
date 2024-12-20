@@ -6,6 +6,13 @@ compile_commands.json
 */*.o
 */*.exe
 
+# Disassembly artifcats
+*.ds
+
+# DDE execution artifacts
+prog.gr
+prog.der
+
 # Clang stuff
 .cache/
 
