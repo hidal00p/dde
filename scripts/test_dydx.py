@@ -1,13 +1,14 @@
+#!/home/hidaloop/.folder/random/pinenv/dde/scripts/venv/bin/python
 from micrograd.engine import Value
 
 x = Value(1.5)
 y = Value(1.25)
-z = x * y * y
 
-w = z * x + 0.95
-v = z * y
+c = x * y
 
-c = v * w
+for _ in range(4):
+    c *= y
+
 c.backward()
 
 print(x.grad, y.grad)
