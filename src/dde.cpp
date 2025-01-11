@@ -3,65 +3,19 @@
 #include <iostream>
 
 #include "graph_utils.h"
-
-struct MEM {
-  REG reg;
-  int64_t disp;
-
-  uint64_t get_effective_addr(CONTEXT *ctx) {
-    uint64_t ef_addr;
-    PIN_GetContextRegval(ctx, reg, (uint8_t *)&ef_addr);
-    ef_addr += disp;
-    ef_addr += reg == REG_RIP ? 8 - ef_addr % 8 : 0;
-    return ef_addr;
-  }
-};
-
-namespace binary_op {
-typedef union {
-  REG reg;
-  uint64_t imm;
-  MEM mem;
-} operand;
-
-enum type { IMM, REG, MEM };
-struct ctx {
-  type src_type;
-  operand src;
-
-  type dest_type;
-  operand dest;
-};
-
-void show_operand(CONTEXT *ctx, type t, operand opr) {
-  switch (t) {
-  case type::IMM:
-    std::cout << opr.imm;
-    break;
-  case type::REG:
-    std::cout << REG_StringShort(opr.reg);
-    break;
-  case type::MEM:
-    uint64_t eff_addr;
-    PIN_GetContextRegval(ctx, opr.mem.reg, (uint8_t *)&eff_addr);
-    eff_addr += opr.mem.disp;
-    std::cout << "0x" << std::hex << eff_addr;
-    break;
-  }
-}
-} // namespace binary_op
+#include "transform_ctx.h"
 
 namespace analysis {
 void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
                        ADDRINT ea) {
-#ifdef VERBOSE
+#ifdef DEBUG
   show_operand(ctx, mov_ctx->dest_type, mov_ctx->dest);
   std::cout << " <-- ";
   show_operand(ctx, mov_ctx->src_type, mov_ctx->src);
   std::cout << std::endl;
 #endif
 
-  if (mov_ctx->src_type == binary_op::type::MEM) {
+  if (mov_ctx->src.type == OprType::MEM) {
 
     if (!mem::is_node_recorded(ea)) {
       double value;
@@ -70,13 +24,13 @@ void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
     }
 
     // We anticipate a load onto an FPU stack
-    assert(mov_ctx->dest_type == binary_op::type::REG);
+    assert(mov_ctx->dest.type == OprType::REGSTR);
     stack::push(mem::expect_node(ea));
 
-  } else if (mov_ctx->src_type == binary_op::type::REG) {
+  } else if (mov_ctx->src.type == OprType::REGSTR) {
 
     // We anticipate a pop off stack into memory
-    assert(mov_ctx->dest_type == binary_op::type::MEM);
+    assert(mov_ctx->dest.type == OprType::MEM);
     mem::insert_node(ea, stack::top());
 
     if (is_pop)
@@ -88,7 +42,7 @@ void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
 
 void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop,
                        ADDRINT ea) {
-#ifdef VERBOSE
+#ifdef DEBUG
   show_operand(ctx, add_ctx->dest_type, add_ctx->dest);
   std::cout << " <-- ";
   show_operand(ctx, add_ctx->src_type, add_ctx->src);
@@ -101,18 +55,18 @@ void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop,
 
   node *src_node, *dest_node;
 
-  if (add_ctx->src_type == binary_op::type::MEM) {
+  if (add_ctx->src.type == OprType::MEM) {
     assert(!is_pop);
     src_node = mem::expect_node(ea);
     dest_node = stack::pop();
     stack::push(new node(
         src_node->value + dest_node->value, 2,
         new node *[] { src_node, dest_node }, transformation::ADD));
-  } else if (add_ctx->src_type == binary_op::type::REG) {
+  } else if (add_ctx->src.type == OprType::REGSTR) {
     uint8_t src_idx =
-        stack::size() - 1 - get_fpu_stack_idx_from_st(add_ctx->src.reg);
+        stack::size() - 1 - get_fpu_stack_idx_from_st(add_ctx->src.origin.reg);
     uint8_t dest_idx =
-        stack::size() - 1 - get_fpu_stack_idx_from_st(add_ctx->dest.reg);
+        stack::size() - 1 - get_fpu_stack_idx_from_st(add_ctx->dest.origin.reg);
 
     src_node = stack::at(src_idx);
     dest_node = stack::at(dest_idx);
@@ -131,7 +85,7 @@ void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop,
 
 void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop,
                        ADDRINT ea) {
-#ifdef VERBOSE
+#ifdef DEBUG
   show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
   std::cout << " <-- ";
   show_operand(ctx, mul_ctx->src_type, mul_ctx->src);
@@ -144,18 +98,18 @@ void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop,
 
   node *src_node, *dest_node;
 
-  if (mul_ctx->src_type == binary_op::type::MEM) {
+  if (mul_ctx->src.type == OprType::MEM) {
     assert(!is_pop);
     src_node = mem::expect_node(ea);
     dest_node = stack::pop();
     stack::push(new node(
         src_node->value * dest_node->value, 2,
         new node *[] { src_node, dest_node }, transformation::MUL));
-  } else if (mul_ctx->src_type == binary_op::type::REG) {
+  } else if (mul_ctx->src.type == OprType::REGSTR) {
     uint8_t src_idx =
-        stack::size() - 1 - get_fpu_stack_idx_from_st(mul_ctx->src.reg);
+        stack::size() - 1 - get_fpu_stack_idx_from_st(mul_ctx->src.origin.reg);
     uint8_t dest_idx =
-        stack::size() - 1 - get_fpu_stack_idx_from_st(mul_ctx->dest.reg);
+        stack::size() - 1 - get_fpu_stack_idx_from_st(mul_ctx->dest.origin.reg);
 
     src_node = stack::at(src_idx);
     dest_node = stack::at(dest_idx);
@@ -174,7 +128,7 @@ void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop,
 
 void track_mem_upd_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
                        ADDRINT ea) {
-#ifdef VERBOSE
+#ifdef DEBUG
   show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
   std::cout << " <-- ";
   show_operand(ctx, mul_ctx->src_type, mul_ctx->src);
@@ -187,18 +141,18 @@ void track_mem_upd_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
 
   node *src_node, *dest_node;
 
-  if (div_ctx->src_type == binary_op::type::MEM) {
+  if (div_ctx->src.type == OprType::MEM) {
     assert(!is_pop);
     src_node = mem::expect_node(ea);
     dest_node = stack::pop();
     stack::push(new node(
         dest_node->value / src_node->value, 2,
         new node *[] { dest_node, src_node }, transformation::DIV));
-  } else if (div_ctx->src_type == binary_op::type::REG) {
+  } else if (div_ctx->src.type == OprType::REGSTR) {
     uint8_t src_idx =
-        stack::size() - 1 - get_fpu_stack_idx_from_st(div_ctx->src.reg);
+        stack::size() - 1 - get_fpu_stack_idx_from_st(div_ctx->src.origin.reg);
     uint8_t dest_idx =
-        stack::size() - 1 - get_fpu_stack_idx_from_st(div_ctx->dest.reg);
+        stack::size() - 1 - get_fpu_stack_idx_from_st(div_ctx->dest.origin.reg);
 
     src_node = stack::at(src_idx);
     dest_node = stack::at(dest_idx);
@@ -217,7 +171,7 @@ void track_mem_upd_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
 
 void track_mem_upd_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop,
                        ADDRINT ea) {
-#ifdef VERBOSE
+#ifdef DEBUG
   show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
   std::cout << " <-- ";
   show_operand(ctx, mul_ctx->src_type, mul_ctx->src);
@@ -230,18 +184,18 @@ void track_mem_upd_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop,
 
   node *src_node, *dest_node;
 
-  if (sub_ctx->src_type == binary_op::type::MEM) {
+  if (sub_ctx->src.type == OprType::MEM) {
     assert(!is_pop);
     src_node = mem::expect_node(ea);
     dest_node = stack::pop();
     stack::push(new node(
         dest_node->value - src_node->value, 2,
         new node *[] { dest_node, src_node }, transformation::SUB));
-  } else if (sub_ctx->src_type == binary_op::type::REG) {
+  } else if (sub_ctx->src.type == OprType::REGSTR) {
     uint8_t src_idx =
-        stack::size() - 1 - get_fpu_stack_idx_from_st(sub_ctx->src.reg);
+        stack::size() - 1 - get_fpu_stack_idx_from_st(sub_ctx->src.origin.reg);
     uint8_t dest_idx =
-        stack::size() - 1 - get_fpu_stack_idx_from_st(sub_ctx->dest.reg);
+        stack::size() - 1 - get_fpu_stack_idx_from_st(sub_ctx->dest.origin.reg);
 
     src_node = stack::at(src_idx);
     dest_node = stack::at(dest_idx);
@@ -266,28 +220,30 @@ binary_op::ctx *get_bop_operands(INS ins) {
   binary_op::ctx *bop_ctx = new binary_op::ctx();
 
   if (INS_OperandIsMemory(ins, DEST_IDX)) {
-    bop_ctx->dest_type = binary_op::type::MEM;
     bop_ctx->dest = {
-        .mem = {INS_OperandMemoryBaseReg(ins, DEST_IDX),
-                (int8_t)INS_OperandMemoryDisplacement(ins, DEST_IDX)}};
+        .origin = {.mem = {INS_OperandMemoryBaseReg(ins, DEST_IDX),
+                           (int8_t)INS_OperandMemoryDisplacement(ins,
+                                                                 DEST_IDX)}},
+        .type = OprType::MEM,
+    };
   } else if (INS_OperandIsReg(ins, DEST_IDX)) {
-    bop_ctx->dest_type = binary_op::type::REG;
-    bop_ctx->dest = {.reg = INS_OperandReg(ins, DEST_IDX)};
+    bop_ctx->dest = {.origin = {.reg = INS_OperandReg(ins, DEST_IDX)},
+                     .type = OprType::REGSTR};
   } else {
     assert(false);
   }
 
   if (INS_OperandIsImmediate(ins, SRC_IDX)) {
-    bop_ctx->src_type = binary_op::type::IMM;
-    bop_ctx->src = {.imm = INS_OperandImmediate(ins, SRC_IDX)};
+    bop_ctx->src = {.origin = {.imm = INS_OperandImmediate(ins, SRC_IDX)},
+                    .type = OprType::IMM};
   } else if (INS_OperandIsReg(ins, SRC_IDX)) {
-    bop_ctx->src_type = binary_op::type::REG;
-    bop_ctx->src = {.reg = INS_OperandReg(ins, SRC_IDX)};
+    bop_ctx->src = {.origin = {.reg = INS_OperandReg(ins, SRC_IDX)},
+                    .type = OprType::REGSTR};
   } else if (INS_OperandIsMemory(ins, SRC_IDX)) {
-    bop_ctx->src_type = binary_op::type::MEM;
-    bop_ctx->src = {
-        .mem = {INS_OperandMemoryBaseReg(ins, SRC_IDX),
-                (int8_t)INS_OperandMemoryDisplacement(ins, SRC_IDX)}};
+    bop_ctx->src = {.origin = {.mem = {INS_OperandMemoryBaseReg(ins, SRC_IDX),
+                                       (int8_t)INS_OperandMemoryDisplacement(
+                                           ins, SRC_IDX)}},
+                    .type = OprType::MEM};
   } else {
     assert(false);
   }
@@ -296,12 +252,14 @@ binary_op::ctx *get_bop_operands(INS ins) {
 }
 
 void handle_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func, bool is_pop) {
-  // We assume that memory can only be a source operand
-  if (bop_ctx->src_type == binary_op::type::MEM)
+
+  // For FP instructions we assume that memory can only be a source operand.
+  // This is a valid assumption, since all the FPU arithmetic operations are
+  // proxied via the FPU stack registers.
+  if (bop_ctx->src.type == OprType::MEM)
     INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_CONST_CONTEXT, IARG_PTR,
                    bop_ctx, IARG_BOOL, is_pop, IARG_MEMORYREAD_EA, IARG_END);
-
-  else if (bop_ctx->src_type == binary_op::type::REG)
+  else if (bop_ctx->src.type == OprType::REGSTR)
     INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_CONST_CONTEXT, IARG_PTR,
                    bop_ctx, IARG_BOOL, is_pop, IARG_ADDRINT, 0, IARG_END);
   else
@@ -311,12 +269,14 @@ void handle_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func, bool is_pop) {
 void handle_mov(INS ins, bool is_pop = false) {
   binary_op::ctx *mov_ctx = get_bop_operands(ins);
 
-  // We anticipate IO to memory to be mutually exclusive
-  if (mov_ctx->src_type == binary_op::type::MEM)
+  // FPU-wise memory can either be written to or read from
+  // at the same time, these two do not happen as a part of
+  // the same op.
+  if (mov_ctx->src.type == OprType::MEM)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
                    IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
                    IARG_MEMORYREAD_EA, IARG_END);
-  else if (mov_ctx->dest_type == binary_op::type::MEM)
+  else if (mov_ctx->dest.type == OprType::MEM)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
                    IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
                    IARG_MEMORYWRITE_EA, IARG_END);
