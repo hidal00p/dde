@@ -2,13 +2,10 @@
 from micrograd.engine import Value
 
 x = Value(1.5)
-y = Value(1.25)
+y = Value(2.0)
 
-c = x * y
+z = (x - y) / y
 
-for _ in range(4):
-    c *= y
-
-c.backward()
+z.backward()
 
 print(x.grad, y.grad)
