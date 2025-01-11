@@ -121,6 +121,25 @@ class Graph:
         elif op == "+":
             rhs_op0.der += lhs_node.der if rhs_op0.gene.is_active else 0.0
             rhs_op1.der += lhs_node.der if rhs_op1.gene.is_active else 0.0
+        elif op == "-":
+            # lhs = rhs0 - rhs1
+            rhs_op0.der += lhs_node.der if rhs_op0.gene.is_active else 0.0
+            rhs_op1.der += -lhs_node.der if rhs_op1.gene.is_active else 0.0
+        elif op == "/":
+            # lhs = rhs0 / rhs1
+            # drhs0 = 1 / rhs1
+            # drhs1 = - rhs0 / rhs1 / rhs1
+            rhs_op0.der += (
+                lhs_node.der / rhs_op1.gene.value if rhs_op0.gene.is_active else 0.0
+            )
+            rhs_op1.der += (
+                -lhs_node.der
+                * rhs_op0.gene.value
+                / rhs_op1.gene.value
+                / rhs_op1.gene.value
+                if rhs_op1.gene.is_active
+                else 0.0
+            )
 
 
 def main():

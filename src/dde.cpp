@@ -62,32 +62,32 @@ void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
 #endif
 
   if (mov_ctx->src_type == binary_op::type::MEM) {
-    uint64_t src_ef_addr = mov_ctx->src.mem.get_effective_addr(ctx);
 
-    if (!mem::is_node_recorded(src_ef_addr)) {
+    if (!mem::is_node_recorded(ea)) {
       double value;
       PIN_SafeCopy((void *)&value, (void *)ea, sizeof(double));
-      mem::insert_node(src_ef_addr, new node(value));
+      mem::insert_node(ea, new node(value));
     }
 
-    if (mov_ctx->dest_type == binary_op::type::MEM) {
-      uint64_t dest_ef_addr = mov_ctx->dest.mem.get_effective_addr(ctx);
-      mem::write_to_mem(dest_ef_addr, src_ef_addr);
-    } else if (mov_ctx->dest_type == binary_op::type::REG) {
-      // Checking for pop here is meaningless
-      stack::push(mem::expect_node(src_ef_addr));
-    } else
-      assert(false);
+    // We anticipate a load onto an FPU stack
+    assert(mov_ctx->dest_type == binary_op::type::REG);
+    stack::push(mem::expect_node(ea));
+
   } else if (mov_ctx->src_type == binary_op::type::REG) {
+
+    // We anticipate a pop off stack into memory
     assert(mov_ctx->dest_type == binary_op::type::MEM);
-    mem::insert_node(mov_ctx->dest.mem.get_effective_addr(ctx), stack::back());
+    mem::insert_node(ea, stack::top());
+
     if (is_pop)
       stack::pop();
+
   } else
     assert(false);
 }
 
-void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop) {
+void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop,
+                       ADDRINT ea) {
 #ifdef VERBOSE
   show_operand(ctx, add_ctx->dest_type, add_ctx->dest);
   std::cout << " <-- ";
@@ -103,7 +103,7 @@ void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop) {
 
   if (add_ctx->src_type == binary_op::type::MEM) {
     assert(!is_pop);
-    src_node = mem::expect_node(add_ctx->src.mem.get_effective_addr(ctx));
+    src_node = mem::expect_node(ea);
     dest_node = stack::pop();
     stack::push(new node(
         src_node->value + dest_node->value, 2,
@@ -129,7 +129,8 @@ void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop) {
   }
 }
 
-void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop) {
+void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop,
+                       ADDRINT ea) {
 #ifdef VERBOSE
   show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
   std::cout << " <-- ";
@@ -145,7 +146,7 @@ void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop) {
 
   if (mul_ctx->src_type == binary_op::type::MEM) {
     assert(!is_pop);
-    src_node = mem::expect_node(mul_ctx->src.mem.get_effective_addr(ctx));
+    src_node = mem::expect_node(ea);
     dest_node = stack::pop();
     stack::push(new node(
         src_node->value * dest_node->value, 2,
@@ -171,10 +172,96 @@ void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop) {
   }
 }
 
+void track_mem_upd_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
+                       ADDRINT ea) {
+#ifdef VERBOSE
+  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
+  std::cout << " <-- ";
+  show_operand(ctx, mul_ctx->src_type, mul_ctx->src);
+  std::cout << " / ";
+  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
+  std::cout << std::endl;
+#endif
+
+  // It is implied that the 2nd operand is a register
+
+  node *src_node, *dest_node;
+
+  if (div_ctx->src_type == binary_op::type::MEM) {
+    assert(!is_pop);
+    src_node = mem::expect_node(ea);
+    dest_node = stack::pop();
+    stack::push(new node(
+        dest_node->value / src_node->value, 2,
+        new node *[] { dest_node, src_node }, transformation::DIV));
+  } else if (div_ctx->src_type == binary_op::type::REG) {
+    uint8_t src_idx =
+        stack::size() - 1 - get_fpu_stack_idx_from_st(div_ctx->src.reg);
+    uint8_t dest_idx =
+        stack::size() - 1 - get_fpu_stack_idx_from_st(div_ctx->dest.reg);
+
+    src_node = stack::at(src_idx);
+    dest_node = stack::at(dest_idx);
+
+    stack::at(dest_idx,
+              new node(
+                  dest_node->value / src_node->value, 2,
+                  new node *[] { dest_node, src_node }, transformation::DIV));
+
+    if (is_pop)
+      assert(stack::pop()->uuid == src_node->uuid);
+  } else {
+    assert(false);
+  }
+}
+
+void track_mem_upd_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop,
+                       ADDRINT ea) {
+#ifdef VERBOSE
+  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
+  std::cout << " <-- ";
+  show_operand(ctx, mul_ctx->src_type, mul_ctx->src);
+  std::cout << " / ";
+  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
+  std::cout << std::endl;
+#endif
+
+  // It is implied that the 2nd operand is a register
+
+  node *src_node, *dest_node;
+
+  if (sub_ctx->src_type == binary_op::type::MEM) {
+    assert(!is_pop);
+    src_node = mem::expect_node(ea);
+    dest_node = stack::pop();
+    stack::push(new node(
+        dest_node->value - src_node->value, 2,
+        new node *[] { dest_node, src_node }, transformation::SUB));
+  } else if (sub_ctx->src_type == binary_op::type::REG) {
+    uint8_t src_idx =
+        stack::size() - 1 - get_fpu_stack_idx_from_st(sub_ctx->src.reg);
+    uint8_t dest_idx =
+        stack::size() - 1 - get_fpu_stack_idx_from_st(sub_ctx->dest.reg);
+
+    src_node = stack::at(src_idx);
+    dest_node = stack::at(dest_idx);
+
+    stack::at(dest_idx,
+              new node(
+                  dest_node->value - src_node->value, 2,
+                  new node *[] { dest_node, src_node }, transformation::SUB));
+
+    if (is_pop)
+      assert(stack::pop()->uuid == src_node->uuid);
+  } else {
+    assert(false);
+  }
+}
+
 } // namespace analysis
 
 namespace inst_handler {
-binary_op::ctx *handle_bop(INS ins) {
+binary_op::ctx *get_bop_operands(INS ins) {
   static const uint8_t SRC_IDX = 1, DEST_IDX = 0;
   binary_op::ctx *bop_ctx = new binary_op::ctx();
 
@@ -208,32 +295,53 @@ binary_op::ctx *handle_bop(INS ins) {
   return bop_ctx;
 }
 
-void handle_mov(INS ins, bool is_pop) {
-  binary_op::ctx *mov_ctx = handle_bop(ins);
-  INS_IsMemoryRead(ins)
-      ? INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
-                       IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
-                       IARG_MEMORYREAD_EA, IARG_END)
-      : INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
-                       IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
-                       IARG_ADDRINT, 5, IARG_END);
+void handle_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func, bool is_pop) {
+  // We assume that memory can only be a source operand
+  if (bop_ctx->src_type == binary_op::type::MEM)
+    INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_CONST_CONTEXT, IARG_PTR,
+                   bop_ctx, IARG_BOOL, is_pop, IARG_MEMORYREAD_EA, IARG_END);
+
+  else if (bop_ctx->src_type == binary_op::type::REG)
+    INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_CONST_CONTEXT, IARG_PTR,
+                   bop_ctx, IARG_BOOL, is_pop, IARG_ADDRINT, 0, IARG_END);
+  else
+    assert(false);
 }
 
-void handle_load_onto_stack(INS ins) { handle_mov(ins, false); }
+void handle_mov(INS ins, bool is_pop = false) {
+  binary_op::ctx *mov_ctx = get_bop_operands(ins);
 
-void handle_pop_off_stack(INS ins) { handle_mov(ins, true); }
+  // We anticipate IO to memory to be mutually exclusive
+  if (mov_ctx->src_type == binary_op::type::MEM)
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
+                   IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
+                   IARG_MEMORYREAD_EA, IARG_END);
+  else if (mov_ctx->dest_type == binary_op::type::MEM)
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
+                   IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
+                   IARG_MEMORYWRITE_EA, IARG_END);
+  else
+    assert(false);
+}
 
 void handle_add(INS ins, bool is_pop = false) {
-  binary_op::ctx *add_ctx = handle_bop(ins);
-  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_add,
-                 IARG_CONST_CONTEXT, IARG_PTR, add_ctx, IARG_BOOL, is_pop,
-                 IARG_END);
+  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mem_upd_add,
+             is_pop);
 }
+
 void handle_mul(INS ins, bool is_pop = false) {
-  binary_op::ctx *mul_ctx = handle_bop(ins);
-  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mul,
-                 IARG_CONST_CONTEXT, IARG_PTR, mul_ctx, IARG_BOOL, is_pop,
-                 IARG_END);
+  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mem_upd_mul,
+             is_pop);
+}
+
+void handle_div(INS ins, bool is_pop = false) {
+  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mem_upd_div,
+             is_pop);
+}
+
+void handle_sub(INS ins, bool is_pop = false) {
+  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mem_upd_sub,
+             is_pop);
 }
 } // namespace inst_handler
 
@@ -243,13 +351,11 @@ VOID instruction(INS ins, VOID *v) {
 
   OPCODE opcode = INS_Opcode(ins);
 
-  if (opcode == XED_ICLASS_FLD) {
-    inst_handler::handle_load_onto_stack(ins);
+  if (opcode == XED_ICLASS_FLD || opcode == XED_ICLASS_FST) {
+    inst_handler::handle_mov(ins);
     return;
-  }
-
-  if (opcode == XED_ICLASS_FSTP) {
-    inst_handler::handle_pop_off_stack(ins);
+  } else if (opcode == XED_ICLASS_FSTP) {
+    inst_handler::handle_mov(ins, true);
     return;
   }
 
@@ -266,6 +372,22 @@ VOID instruction(INS ins, VOID *v) {
     return;
   } else if (opcode == XED_ICLASS_FADDP) {
     inst_handler::handle_add(ins, true);
+    return;
+  }
+
+  if (opcode == XED_ICLASS_FDIV) {
+    inst_handler::handle_div(ins);
+    return;
+  } else if (opcode == XED_ICLASS_FDIVP) {
+    inst_handler::handle_div(ins, true);
+    return;
+  }
+
+  if (opcode == XED_ICLASS_FSUB) {
+    inst_handler::handle_sub(ins);
+    return;
+  } else if (opcode == XED_ICLASS_FSUBP) {
+    inst_handler::handle_sub(ins, true);
     return;
   }
 }

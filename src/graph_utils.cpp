@@ -48,7 +48,7 @@ void at(uint8_t idx, node *n) {
   fpu_stack[idx] = n;
 }
 
-node *back() {
+node *top() {
   assert(fpu_stack.size() > 0);
   return fpu_stack.back();
 }
@@ -61,8 +61,10 @@ void show_node(node *n, std::string prefix) {
 
   std::string tr_str = n->tr == transformation::NONE  ? ""
                        : n->tr == transformation::ADD ? "+"
-                                                      : "*";
-  std::cout << " " << tr_str << " " << std::endl;
+                       : n->tr == transformation::MUL ? "*"
+                       : n->tr == transformation::DIV ? "/"
+                                                      : "-";
+  std::cout << " " << tr_str << std::endl;
 
   for (uint i = 0; i < n->n_operands; i++) {
     show_node(n->operands[i], prefix + " ");

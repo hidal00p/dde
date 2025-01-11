@@ -11,7 +11,7 @@
  *
  * NOTE: might want to wrap things into a shared_ptr
  */
-enum transformation { NONE, MUL, ADD };
+enum transformation { NONE, MUL, ADD, DIV, SUB, CHS };
 
 std::string get_uuid();
 
@@ -50,7 +50,7 @@ void push(node *n);
 node *pop();
 node *at(uint8_t idx);
 void at(uint8_t idx, node *n);
-node *back();
+node *top();
 uint8_t size();
 } // namespace stack
 
