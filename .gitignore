@@ -10,8 +10,8 @@ compile_commands.json
 *.ds
 
 # DDE execution artifacts
-prog.gr
-prog.der
+*/prog.gr
+*/prog.der
 
 # Clang stuff
 .cache/
