@@ -1,7 +1,10 @@
 #!/home/hidaloop/.folder/random/pinenv/dde/scripts/venv/bin/python
+import os
 import pathlib
 from typing import NamedTuple
 from dataclasses import dataclass
+
+BINARY_OPS = ["+", "-", "/", "*"]
 
 
 class NodeGene(NamedTuple):
@@ -50,11 +53,13 @@ class Graph:
             return node
 
         parents = []
-        if gene.op:
+        if gene.op and gene.op in BINARY_OPS:
             parents = [
                 self.parse_node(self.graph_file.readline()),
                 self.parse_node(self.graph_file.readline()),
             ]
+        elif gene.op:
+            parents = [self.parse_node(self.graph_file.readline())]
 
         node = Node(gene, parents)
         self.node_map[node.gene.uuid] = node
@@ -108,6 +113,13 @@ class Graph:
         if not (op := lhs_node.gene.op):
             return
 
+        if op in BINARY_OPS:
+            self._propagate_binary_op_der(op, lhs_node)
+        elif op == "~":
+            rhs = lhs_node.parents[0]
+            rhs.der += -1 * lhs_node.der if rhs.gene.is_active else 0.0
+
+    def _propagate_binary_op_der(self, op: str, lhs_node: Node):
         rhs_op0 = lhs_node.parents[0]
         rhs_op1 = lhs_node.parents[1]
 
@@ -151,3 +163,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # os.system("pin -t src/obj-intel64/dde.so -- targets/polynom.exe > scripts/prog.gr")

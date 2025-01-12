@@ -25,5 +25,6 @@ BOOL is_img_main(INS ins) { return is_img_main(INS_Rtn(ins)); }
 
 BOOL is_main_rtn(INS ins) {
   RTN rtn = INS_Rtn(ins);
-  return RTN_Valid(rtn) && RTN_Name(rtn) == "main";
+  return RTN_Valid(rtn) && (RTN_Name(rtn) == "main" ||
+                            RTN_Name(rtn).find("f") != std::string::npos);
 }

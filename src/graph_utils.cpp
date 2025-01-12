@@ -63,7 +63,8 @@ void show_node(node *n, std::string prefix) {
                        : n->tr == transformation::ADD ? "+"
                        : n->tr == transformation::MUL ? "*"
                        : n->tr == transformation::DIV ? "/"
-                                                      : "-";
+                       : n->tr == transformation::SUB ? "-"
+                                                      : "~";
   std::cout << " " << tr_str << std::endl;
 
   for (uint i = 0; i < n->n_operands; i++) {

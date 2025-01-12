@@ -212,6 +212,12 @@ void track_mem_upd_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop,
   }
 }
 
+void track_mem_upd_sch() {
+  node *src_node = stack::pop();
+  stack::push(new node(
+      -1 * src_node->value, 1, new node *[] { src_node }, transformation::CHS));
+}
+
 } // namespace analysis
 
 namespace inst_handler {
@@ -303,6 +309,11 @@ void handle_sub(INS ins, bool is_pop = false) {
   handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mem_upd_sub,
              is_pop);
 }
+
+void handle_sign_change(INS ins) {
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_sch,
+                 IARG_END);
+}
 } // namespace inst_handler
 
 VOID instruction(INS ins, VOID *v) {
@@ -316,6 +327,11 @@ VOID instruction(INS ins, VOID *v) {
     return;
   } else if (opcode == XED_ICLASS_FSTP) {
     inst_handler::handle_mov(ins, true);
+    return;
+  }
+
+  if (opcode == XED_ICLASS_FCHS) {
+    inst_handler::handle_sign_change(ins);
     return;
   }
 
