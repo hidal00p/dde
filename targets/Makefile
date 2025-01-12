@@ -1,6 +1,5 @@
-TARGETS = polynom.exe \
-		  traces.exe
-CPP_FLAGS = -g -m64 -mno-sse
+TARGETS = polynom.exe
+CPP_FLAGS = -g -mfpmath=387
 
 all: $(TARGETS)
 
