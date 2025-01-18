@@ -1,8 +1,8 @@
 #!/home/hidaloop/.folder/random/pinenv/dde/scripts/venv/bin/python
 from micrograd.engine import Value
 
-x = Value(2.63)
-y = 2 * x * x * x + 5 * x * x - 4 * x - 3
+x = Value(3.0)
+y = 3 * x**2 - 4.0
 
 y.backward()
 
