@@ -1,5 +1,6 @@
 TARGETS_DIR := targets
 SRC_DIR := src
+LIB_DIR := lib
 
 all: tools targets
 
@@ -10,7 +11,7 @@ targets:
 	$(MAKE) -C $(TARGETS_DIR)
 
 format:
-	clang-format -i $(SRC_DIR)/*.cpp $(SRC_DIR)/*.h $(TARGETS_DIR)/*.cpp
+	clang-format -i $(SRC_DIR)/*.cpp $(SRC_DIR)/*.h $(TARGETS_DIR)/*.cpp $(LIB_DIR)/*.h
 	black scripts/*.py
 
 clean:

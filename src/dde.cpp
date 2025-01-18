@@ -8,13 +8,6 @@
 namespace analysis {
 void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
                        ADDRINT ea) {
-#ifdef DEBUG
-  show_operand(ctx, mov_ctx->dest_type, mov_ctx->dest);
-  std::cout << " <-- ";
-  show_operand(ctx, mov_ctx->src_type, mov_ctx->src);
-  std::cout << std::endl;
-#endif
-
   if (mov_ctx->src.type == OprType::MEM) {
 
     if (!mem::is_node_recorded(ea)) {
@@ -42,15 +35,6 @@ void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
 
 void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop,
                        ADDRINT ea) {
-#ifdef DEBUG
-  show_operand(ctx, add_ctx->dest_type, add_ctx->dest);
-  std::cout << " <-- ";
-  show_operand(ctx, add_ctx->src_type, add_ctx->src);
-  std::cout << " + ";
-  show_operand(ctx, add_ctx->dest_type, add_ctx->dest);
-  std::cout << std::endl;
-#endif
-
   // It is implied that the 2nd operand is a register
 
   node *src_node, *dest_node;
@@ -85,15 +69,6 @@ void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop,
 
 void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop,
                        ADDRINT ea) {
-#ifdef DEBUG
-  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
-  std::cout << " <-- ";
-  show_operand(ctx, mul_ctx->src_type, mul_ctx->src);
-  std::cout << " * ";
-  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
-  std::cout << std::endl;
-#endif
-
   // It is implied that the 2nd operand is a register
 
   node *src_node, *dest_node;
@@ -128,15 +103,6 @@ void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop,
 
 void track_mem_upd_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
                        ADDRINT ea) {
-#ifdef DEBUG
-  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
-  std::cout << " <-- ";
-  show_operand(ctx, mul_ctx->src_type, mul_ctx->src);
-  std::cout << " / ";
-  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
-  std::cout << std::endl;
-#endif
-
   // It is implied that the 2nd operand is a register
 
   node *src_node, *dest_node;
@@ -171,15 +137,6 @@ void track_mem_upd_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
 
 void track_mem_upd_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop,
                        ADDRINT ea) {
-#ifdef DEBUG
-  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
-  std::cout << " <-- ";
-  show_operand(ctx, mul_ctx->src_type, mul_ctx->src);
-  std::cout << " / ";
-  show_operand(ctx, mul_ctx->dest_type, mul_ctx->dest);
-  std::cout << std::endl;
-#endif
-
   // It is implied that the 2nd operand is a register
 
   node *src_node, *dest_node;
@@ -286,8 +243,13 @@ void handle_mov(INS ins, bool is_pop = false) {
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
                    IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
                    IARG_MEMORYWRITE_EA, IARG_END);
-  else
+  else {
+    // TODO: bug, I get both source and destination to be FPU
+    // stack regs. This is actually a straight forward handling,
+    // which would just need to put a duplicate value on stack.
+    std::cout << INS_Disassemble(ins) << std::endl;
     assert(false);
+  }
 }
 
 void handle_add(INS ins, bool is_pop = false) {
@@ -316,8 +278,29 @@ void handle_sign_change(INS ins) {
 }
 } // namespace inst_handler
 
+bool active_instrumentation = false;
+
+void start_instr() { active_instrumentation = true; }
+void stop_instr() { active_instrumentation = false; }
+
+VOID routine(RTN rtn, VOID *v) {
+  if (RTN_Name(rtn).find("__dde_start") != std::string::npos) {
+    RTN_Open(rtn);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)start_instr, IARG_END);
+    RTN_Close(rtn);
+    return;
+  }
+
+  if (RTN_Name(rtn).find("__dde_stop") != std::string::npos) {
+    RTN_Open(rtn);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_instr, IARG_END);
+    RTN_Close(rtn);
+    return;
+  }
+}
+
 VOID instruction(INS ins, VOID *v) {
-  if (!is_main_rtn(ins))
+  if (!active_instrumentation)
     return;
 
   OPCODE opcode = INS_Opcode(ins);
@@ -381,6 +364,36 @@ INT32 usage() {
 
 void final_processing(INT32 code, VOID *v) { show_mem_map(); }
 
+namespace test {
+VOID instruction(INS ins, VOID *v) {
+  if (!active_instrumentation)
+    return;
+
+  std::cout << INS_Disassemble(ins) << std::endl;
+}
+
+void start_instr() { active_instrumentation = true; }
+void stop_instr() { active_instrumentation = false; }
+
+VOID routine(RTN rtn, VOID *v) {
+  if (RTN_Name(rtn).find("__dde_start") != std::string::npos) {
+    RTN_Open(rtn);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)start_instr, IARG_END);
+    RTN_Close(rtn);
+    return;
+  }
+
+  if (RTN_Name(rtn).find("__dde_stop") != std::string::npos) {
+    RTN_Open(rtn);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_instr, IARG_END);
+    RTN_Close(rtn);
+    return;
+  }
+}
+
+void final_processing(INT32 code, VOID *v) {}
+} // namespace test
+
 /* ===================================================================== */
 /* Main                                                                  */
 /* ===================================================================== */
@@ -393,11 +406,16 @@ int main(int argc, char *argv[]) {
   if (PIN_Init(argc, argv))
     return usage();
 
+#ifndef DEBUG
   // Register Instruction to be called to instrument instructions
+  RTN_AddInstrumentFunction(test::routine, 0);
   INS_AddInstrumentFunction(instruction, 0);
-
   // Final graph processing
   PIN_AddFiniFunction(final_processing, 0);
+#else
+  INS_AddInstrumentFunction(test::instruction, 0);
+  PIN_AddFiniFunction(test::final_processing, 0);
+#endif
 
   // Start the program, never returns
   PIN_StartProgram();
