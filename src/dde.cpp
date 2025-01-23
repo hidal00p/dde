@@ -5,32 +5,70 @@
 #include "graph_utils.h"
 #include "transform_ctx.h"
 
+#define SHOW_INST(ins) std::cout << INS_Disassemble(ins) << std::endl;
+
+uint64_t data_start = 0x0;
+uint64_t data_end = 0x0;
+
+bool is_data_section(ADDRINT ea) { return ea >= data_start && ea <= data_end; }
+
+struct var_mark_ctx {
+  bool is_var_marked = false;
+  char var_mark_buffer[1] = {0};
+};
+
+var_mark_ctx vm_ctx;
+
 namespace analysis {
 void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
                        ADDRINT ea) {
   if (mov_ctx->src.type == OprType::MEM) {
+    node *n;
+    double value;
+    PIN_SafeCopy((void *)&value, (void *)ea, sizeof(double));
 
-    if (!mem::is_node_recorded(ea)) {
-      double value;
-      PIN_SafeCopy((void *)&value, (void *)ea, sizeof(double));
-      mem::insert_node(ea, new node(value));
+    if (is_data_section(ea)) {
+      n = new node(value);
+      if (vm_ctx.is_var_marked) {
+        std::string s(1, vm_ctx.var_mark_buffer[0]);
+        n->uuid = s;
+      }
+    } else if (!mem::is_node_recorded(ea)) {
+      n = new node(value);
+      mem::insert_node(ea, n);
+      if (vm_ctx.is_var_marked) {
+        std::string s(1, vm_ctx.var_mark_buffer[0]);
+        n->uuid = s;
+      }
+    } else {
+      n = mem::expect_node(ea);
     }
 
     // We anticipate a load onto an FPU stack
     assert(mov_ctx->dest.type == OprType::REGSTR);
-    stack::push(mem::expect_node(ea));
+    stack::push(n);
 
   } else if (mov_ctx->src.type == OprType::REGSTR) {
 
-    // We anticipate a pop off stack into memory
-    assert(mov_ctx->dest.type == OprType::MEM);
-    mem::insert_node(ea, stack::top());
+    if (mov_ctx->dest.type == OprType::MEM) {
+      mem::insert_node(ea, stack::top());
+      if (is_pop)
+        stack::pop();
+    } else if (mov_ctx->dest.type == OprType::REGSTR) {
+      stack::push(stack::top());
+    } else
+      assert(false);
 
-    if (is_pop)
-      stack::pop();
-
-  } else
-    assert(false);
+  } else {
+    assert(mov_ctx->src.type == OprType::IMM &&
+           mov_ctx->dest.type == OprType::REGSTR);
+    node *n = new node(mov_ctx->src.origin.imm);
+    if (vm_ctx.is_var_marked) {
+      std::string s(1, vm_ctx.var_mark_buffer[0]);
+      n->uuid = s;
+    }
+    stack::push(n);
+  }
 }
 
 void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop,
@@ -244,12 +282,24 @@ void handle_mov(INS ins, bool is_pop = false) {
                    IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
                    IARG_MEMORYWRITE_EA, IARG_END);
   else {
-    // TODO: bug, I get both source and destination to be FPU
-    // stack regs. This is actually a straight forward handling,
-    // which would just need to put a duplicate value on stack.
-    std::cout << INS_Disassemble(ins) << std::endl;
-    assert(false);
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
+                   IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
+                   IARG_UINT32, 0, IARG_END);
   }
+}
+
+void handle_mov_const(INS ins, uint8_t constant) {
+  static const uint8_t DEST_IDX = 0;
+
+  // Manually construct a move context for instructions like FLDZ
+  binary_op::ctx *mov_ctx = new binary_op::ctx();
+  mov_ctx->dest = {.origin = {.reg = INS_OperandReg(ins, DEST_IDX)},
+                   .type = OprType::REGSTR};
+  mov_ctx->src = {.origin = {.imm = constant}, .type = OprType::IMM};
+
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
+                 IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, false,
+                 IARG_UINT32, 0, IARG_END);
 }
 
 void handle_add(INS ins, bool is_pop = false) {
@@ -311,6 +361,9 @@ VOID instruction(INS ins, VOID *v) {
   } else if (opcode == XED_ICLASS_FSTP) {
     inst_handler::handle_mov(ins, true);
     return;
+  } else if (opcode == XED_ICLASS_FLDZ) {
+    inst_handler::handle_mov_const(ins, 0);
+    return;
   }
 
   if (opcode == XED_ICLASS_FCHS) {
@@ -365,7 +418,21 @@ INT32 usage() {
 void final_processing(INT32 code, VOID *v) { show_mem_map(); }
 
 namespace test {
-VOID instruction(INS ins, VOID *v) {
+void image(IMG img, void *v) {
+  if (!IMG_IsMainExecutable(img))
+    return;
+
+  for (SEC section = IMG_SecHead(img); SEC_Valid(section);
+       section = SEC_Next(section)) {
+    if (SEC_Name(section) == ".rodata") {
+      data_start = SEC_Address(section);
+      data_end = data_start + SEC_Size(section);
+      break;
+    }
+  }
+}
+
+void instruction(INS ins, VOID *v) {
   if (!active_instrumentation)
     return;
 
@@ -374,6 +441,15 @@ VOID instruction(INS ins, VOID *v) {
 
 void start_instr() { active_instrumentation = true; }
 void stop_instr() { active_instrumentation = false; }
+
+void start_marking(const char *mark) {
+  vm_ctx.is_var_marked = true;
+  vm_ctx.var_mark_buffer[0] = mark[0];
+}
+void stop_marking() {
+  vm_ctx.is_var_marked = false;
+  vm_ctx.var_mark_buffer[0] = 0;
+}
 
 VOID routine(RTN rtn, VOID *v) {
   if (RTN_Name(rtn).find("__dde_start") != std::string::npos) {
@@ -389,9 +465,49 @@ VOID routine(RTN rtn, VOID *v) {
     RTN_Close(rtn);
     return;
   }
+
+  if (RTN_Name(rtn).find("__dde_mark_start") != std::string::npos) {
+    RTN_Open(rtn);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)start_marking,
+                   IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_END);
+    RTN_Close(rtn);
+    return;
+  }
+
+  if (RTN_Name(rtn).find("__dde_mark_stop") != std::string::npos) {
+    RTN_Open(rtn);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_marking, IARG_END);
+    RTN_Close(rtn);
+    return;
+  }
 }
 
+struct inst_ctx {
+  std::string dis;
+  inst_ctx(std::string dis) : dis(dis) {}
+};
+
+void in(inst_ctx *ctx) { std::cout << ctx->dis << std::endl; }
 void final_processing(INT32 code, VOID *v) {}
+
+void trace(TRACE trc, VOID *v) {
+  RTN rtn = TRACE_Rtn(trc);
+  if (!RTN_Valid(rtn) || RTN_Name(rtn) != "main")
+    return;
+
+  int i = 1;
+  for (BBL bbl = TRACE_BblHead(trc); BBL_Valid(bbl); bbl = BBL_Next(bbl)) {
+    std::cout << "==== BBL " << i << " ====" << std::endl;
+    for (INS ins = BBL_InsHead(bbl); INS_Valid(ins); ins = INS_Next(ins)) {
+      INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)in, IARG_PTR,
+                     new inst_ctx(INS_Disassemble(ins)), IARG_END);
+      std::cout << INS_Disassemble(ins) << std::endl;
+    }
+    std::cout << "========" << std::endl;
+    i++;
+  }
+  std::cout << std::endl;
+}
 } // namespace test
 
 /* ===================================================================== */
@@ -408,12 +524,16 @@ int main(int argc, char *argv[]) {
 
 #ifndef DEBUG
   // Register Instruction to be called to instrument instructions
+  IMG_AddInstrumentFunction(test::image, 0);
   RTN_AddInstrumentFunction(test::routine, 0);
   INS_AddInstrumentFunction(instruction, 0);
+
   // Final graph processing
   PIN_AddFiniFunction(final_processing, 0);
 #else
-  INS_AddInstrumentFunction(test::instruction, 0);
+  RTN_AddInstrumentFunction(test::routine, 0);
+  TRACE_AddInstrumentFunction(test::trace, 0);
+  // INS_AddInstrumentFunction(test::instruction, 0);
   PIN_AddFiniFunction(test::final_processing, 0);
 #endif
 

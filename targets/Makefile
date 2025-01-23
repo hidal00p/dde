@@ -1,5 +1,5 @@
 TARGETS = polynom.exe
-CPP_FLAGS = -g -mfpmath=387
+CPP_FLAGS = -std=c++17 -g -mfpmath=387
 
 all: $(TARGETS)
 

@@ -2,8 +2,8 @@
 from micrograd.engine import Value
 
 x = Value(3.0)
-y = 3 * x**2 - 4.0
+y = 3.0 * x * x - 4.0 * x + 5
 
 y.backward()
 
-print(x.grad)
+print(f"{x.grad=}")
