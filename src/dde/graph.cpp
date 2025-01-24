@@ -73,7 +73,22 @@ void show_node(node *n, std::string prefix) {
 }
 
 void show_mem_map() {
-  for (const auto &[addr, n] : mem_map) {
+  std::vector<node *> uniq_nodes;
+  for (const auto &[addr1, n1] : mem_map) {
+    bool uniq = true;
+
+    for (const auto &n : uniq_nodes) {
+      if (n->uuid == n1->uuid) {
+        uniq = false;
+        break;
+      }
+    }
+
+    if (uniq_nodes.size() == 0 || uniq)
+      uniq_nodes.push_back(n1);
+  }
+
+  for (const auto &n : uniq_nodes) {
     if (n->operands == nullptr)
       continue;
     show_node(n, "");
@@ -100,21 +115,11 @@ node *expect_node(uint64_t ef_addr) {
 }
 
 void write_to_reg(uint64_t from_mem, uint64_t to_reg) {
-  std::optional<node *> n = get_node(from_mem);
-
-  if (!n)
-    assert(false);
-
-  reg::insert_node(to_reg, n.value());
+  reg::insert_node(to_reg, expect_node(from_mem));
 }
 
 void write_to_mem(uint64_t from_mem, uint64_t to_mem) {
-  std::optional<node *> n = get_node(from_mem);
-
-  if (!n)
-    assert(false);
-
-  mem::insert_node(to_mem, n.value());
+  mem::insert_node(to_mem, expect_node(from_mem));
 }
 } // namespace mem
 
@@ -138,20 +143,10 @@ node *expect_node(uint64_t reg) {
 }
 
 void write_to_mem(uint64_t from_reg, uint64_t to_mem) {
-  std::optional<node *> n = get_node(from_reg);
-
-  if (!n)
-    assert(false);
-
-  mem::insert_node(to_mem, n.value());
+  mem::insert_node(to_mem, expect_node(from_reg));
 }
 
 void write_to_other_reg(uint64_t from_reg, uint64_t to_reg) {
-  std::optional<node *> n = get_node(from_reg);
-
-  if (!n)
-    assert(false);
-
-  reg::insert_node(to_reg, n.value());
+  reg::insert_node(to_reg, expect_node(from_reg));
 }
 } // namespace reg
