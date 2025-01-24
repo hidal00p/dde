@@ -10,11 +10,11 @@
 ##############################################################
 
 # If the tool is built out of the kit, PIN_ROOT must be specified in the make invocation and point to the kit root.
-MY_OBJS := graph_utils \
+MY_OBJS := graph \
 		   pin_utils \
 		   transform_ctx \
-		   dde_params \
-		   dde_instrumentation
+		   params \
+		   handlers
 MY_TOOLS := dde
 
 ifdef PIN_ROOT

@@ -1,6 +1,6 @@
-#include "dde_instrumentation.h"
-#include "dde_params.h"
-#include "graph_utils.h"
+#include "handlers.h"
+#include "graph.h"
+#include "params.h"
 #include "pin_utils.h"
 
 namespace analysis {

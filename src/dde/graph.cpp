@@ -1,4 +1,4 @@
-#include "graph_utils.h"
+#include "graph.h"
 #include <cassert>
 #include <iostream>
 #include <random>

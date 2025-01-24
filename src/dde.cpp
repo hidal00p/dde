@@ -1,10 +1,10 @@
-#include "pin_utils.h"
+#include "dde/pin_utils.h"
 #include <cassert>
 #include <iostream>
 
-#include "dde_instrumentation.h"
-#include "dde_params.h"
-#include "graph_utils.h"
+#include "dde/graph.h"
+#include "dde/handlers.h"
+#include "dde/params.h"
 
 VOID instruction(INS ins, VOID *v) {
   if (!dde_state.to_instrument)

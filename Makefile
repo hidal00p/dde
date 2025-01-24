@@ -11,8 +11,12 @@ targets:
 	$(MAKE) -C $(TARGETS_DIR)
 
 format:
-	clang-format -i $(SRC_DIR)/*.cpp $(SRC_DIR)/*.h $(TARGETS_DIR)/*.cpp $(LIB_DIR)/*.h
-	black scripts/*.py
+	@clang-format -i $(SRC_DIR)/*.cpp \
+		$(SRC_DIR)/dde/*.h $(SRC_DIR)/dde/*.cpp \
+		$(TARGETS_DIR)/*.cpp \
+		$(LIB_DIR)/*.h \
+		&& echo "Formatted C++ project"
+	@black scripts/*.py
 
 clean:
 	rm -rf *.out

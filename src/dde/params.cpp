@@ -1,4 +1,4 @@
-#include "dde_params.h"
+#include "params.h"
 
 bool DataRegion::within_range(ADDRINT ea) {
   return ea >= this->start && ea <= this->end;
