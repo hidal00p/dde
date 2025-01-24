@@ -25,6 +25,7 @@ namespace binary_op {
 struct ctx {
   operand src;
   operand dest;
+  INS ins;
 };
 } // namespace binary_op
 

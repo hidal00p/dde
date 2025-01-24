@@ -1,35 +1,61 @@
-#include "handlers.h"
-#include "graph.h"
-#include "params.h"
 #include "pin_utils.h"
 
+#include "graph.h"
+#include "handlers.h"
+#include "params.h"
+
+#include <iostream>
+
 namespace analysis {
-void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
-                       ADDRINT ea) {
+void track_reg_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, ADDRINT ea) {
+  // Primarily to handle parameter
+  // passing ABI, so we assume all the nodes exist
+
   if (mov_ctx->src.type == OprType::MEM) {
-    node *n;
-    double value;
-    PIN_SafeCopy((void *)&value, (void *)ea, sizeof(double));
+    assert(mov_ctx->dest.type == OprType::REGSTR);
+    mem::write_to_reg(ea, mov_ctx->dest.origin.reg);
 
-    if (sec_info.rodata.within_range(ea)) {
-      n = new node(value);
-      if (vm_ctx.is_var_marked) {
-        std::string s(1, vm_ctx.var_mark_buffer[0]);
-        n->uuid = s;
-      }
-    } else if (!mem::is_node_recorded(ea)) {
-      n = new node(value);
-      mem::insert_node(ea, n);
-      if (vm_ctx.is_var_marked) {
-        std::string s(1, vm_ctx.var_mark_buffer[0]);
-        n->uuid = s;
-      }
-    } else {
-      n = mem::expect_node(ea);
-    }
+  } else if (mov_ctx->src.type == OprType::REGSTR) {
+    if (mov_ctx->dest.type == OprType::REGSTR)
+      reg::write_to_other_reg(mov_ctx->src.origin.reg,
+                              mov_ctx->dest.origin.reg);
 
+    else if (mov_ctx->dest.type == OprType::MEM)
+      reg::write_to_mem(mov_ctx->src.origin.reg, ea);
+
+    else
+      assert(false);
+
+  } else
+    assert(false);
+}
+
+void track_fpu_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
+                   ADDRINT ea) {
+  if (mov_ctx->src.type == OprType::MEM) {
     // We anticipate a load onto an FPU stack
     assert(mov_ctx->dest.type == OprType::REGSTR);
+
+    node *n;
+    bool from_data_sec = sec_info.rodata.within_range(ea);
+    bool node_recorded = mem::is_node_recorded(ea);
+
+    if (from_data_sec || !node_recorded) {
+      double value;
+      PIN_SafeCopy((void *)&value, (void *)ea, sizeof(double));
+      n = new node(value);
+
+      if (!node_recorded && !from_data_sec)
+        mem::insert_node(ea, n);
+
+      if (vm_ctx.is_var_marked) {
+        std::string s(1, vm_ctx.var_mark_buffer[0]);
+        n->uuid = s;
+      }
+
+    } else
+      n = mem::expect_node(ea);
+
     stack::push(n);
 
   } else if (mov_ctx->src.type == OprType::REGSTR) {
@@ -38,9 +64,11 @@ void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
       mem::insert_node(ea, stack::top());
       if (is_pop)
         stack::pop();
-    } else if (mov_ctx->dest.type == OprType::REGSTR) {
+
+    } else if (mov_ctx->dest.type == OprType::REGSTR)
       stack::push(stack::top());
-    } else
+
+    else
       assert(false);
 
   } else {
@@ -55,8 +83,7 @@ void track_mem_upd_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
   }
 }
 
-void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop,
-                       ADDRINT ea) {
+void track_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea) {
   // It is implied that the 2nd operand is a register
 
   node *src_node, *dest_node;
@@ -89,8 +116,7 @@ void track_mem_upd_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop,
   }
 }
 
-void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop,
-                       ADDRINT ea) {
+void track_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea) {
   // It is implied that the 2nd operand is a register
 
   node *src_node, *dest_node;
@@ -123,8 +149,7 @@ void track_mem_upd_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop,
   }
 }
 
-void track_mem_upd_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
-                       ADDRINT ea) {
+void track_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop, ADDRINT ea) {
   // It is implied that the 2nd operand is a register
 
   node *src_node, *dest_node;
@@ -157,8 +182,7 @@ void track_mem_upd_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
   }
 }
 
-void track_mem_upd_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop,
-                       ADDRINT ea) {
+void track_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop, ADDRINT ea) {
   // It is implied that the 2nd operand is a register
 
   node *src_node, *dest_node;
@@ -191,7 +215,7 @@ void track_mem_upd_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop,
   }
 }
 
-void track_mem_upd_sch() {
+void track_sch() {
   node *src_node = stack::pop();
   stack::push(new node(
       -1 * src_node->value, 1, new node *[] { src_node }, transformation::CHS));
@@ -251,28 +275,58 @@ void handle_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func, bool is_pop) {
     assert(false);
 }
 
-void handle_mov(INS ins, bool is_pop) {
+void handle_reg_mov(INS ins) {
+  binary_op::ctx *mov_ctx = get_bop_operands(ins);
+  // We assume that there is no mem to mem IO
+  if (mov_ctx->src.type == OprType::MEM)
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,
+                   IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_MEMORYREAD_EA,
+                   IARG_END);
+
+  else if (mov_ctx->dest.type == OprType::MEM) {
+    REG src_reg = mov_ctx->src.origin.reg;
+    if (src_reg == REG_RBP || src_reg == REG_RDI)
+      return;
+
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,
+                   IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_MEMORYWRITE_EA,
+                   IARG_END);
+
+  } else {
+    // Implicit reg to reg
+    REG dest_reg = mov_ctx->dest.origin.reg;
+    if (dest_reg == REG_RBP || dest_reg == REG_RDI || dest_reg == REG_EAX)
+      return;
+
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,
+                   IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_UINT32, 0,
+                   IARG_END);
+  }
+}
+
+void handle_fpu_mov(INS ins, bool is_pop) {
   binary_op::ctx *mov_ctx = get_bop_operands(ins);
 
   // FPU-wise memory can either be written to or read from
   // at the same time, these two do not happen as a part of
   // the same op.
   if (mov_ctx->src.type == OprType::MEM)
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_fpu_mov,
                    IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
                    IARG_MEMORYREAD_EA, IARG_END);
+
   else if (mov_ctx->dest.type == OprType::MEM)
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_fpu_mov,
                    IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
                    IARG_MEMORYWRITE_EA, IARG_END);
-  else {
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
+
+  else
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_fpu_mov,
                    IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, is_pop,
                    IARG_UINT32, 0, IARG_END);
-  }
 }
 
-void handle_mov_const(INS ins, uint8_t constant) {
+void handle_fpu_const_load(INS ins, uint8_t constant) {
   static const uint8_t DEST_IDX = 0;
 
   // Manually construct a move context for instructions like FLDZ
@@ -281,33 +335,28 @@ void handle_mov_const(INS ins, uint8_t constant) {
                    .type = OprType::REGSTR};
   mov_ctx->src = {.origin = {.imm = constant}, .type = OprType::IMM};
 
-  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_mov,
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_fpu_mov,
                  IARG_CONST_CONTEXT, IARG_PTR, mov_ctx, IARG_BOOL, false,
                  IARG_UINT32, 0, IARG_END);
 }
 
 void handle_add(INS ins, bool is_pop) {
-  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mem_upd_add,
-             is_pop);
+  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_add, is_pop);
 }
 
 void handle_mul(INS ins, bool is_pop) {
-  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mem_upd_mul,
-             is_pop);
+  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mul, is_pop);
 }
 
 void handle_div(INS ins, bool is_pop) {
-  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mem_upd_div,
-             is_pop);
+  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_div, is_pop);
 }
 
 void handle_sub(INS ins, bool is_pop) {
-  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mem_upd_sub,
-             is_pop);
+  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_sub, is_pop);
 }
 
 void handle_sign_change(INS ins) {
-  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_mem_upd_sch,
-                 IARG_END);
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_sch, IARG_END);
 }
 } // namespace instrumentation

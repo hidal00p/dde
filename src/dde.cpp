@@ -1,10 +1,11 @@
 #include "dde/pin_utils.h"
-#include <cassert>
-#include <iostream>
 
 #include "dde/graph.h"
 #include "dde/handlers.h"
 #include "dde/params.h"
+
+#include <cassert>
+#include <iostream>
 
 VOID instruction(INS ins, VOID *v) {
   if (!dde_state.to_instrument)
@@ -12,17 +13,27 @@ VOID instruction(INS ins, VOID *v) {
 
   OPCODE opcode = INS_Opcode(ins);
 
-  if (opcode == XED_ICLASS_FLD || opcode == XED_ICLASS_FST) {
-    instrumentation::handle_mov(ins);
-    return;
-  } else if (opcode == XED_ICLASS_FSTP) {
-    instrumentation::handle_mov(ins, true);
-    return;
-  } else if (opcode == XED_ICLASS_FLDZ) {
-    instrumentation::handle_mov_const(ins, 0);
+  // Register read and write
+  if (opcode == XED_ICLASS_MOVSD_XMM || opcode == XED_ICLASS_MOV ||
+      opcode == XED_ICLASS_MOVAPD || opcode == XED_ICLASS_MOVQ) {
+    instrumentation::handle_reg_mov(ins);
     return;
   }
 
+  // FPU stack read and write
+  if (opcode == XED_ICLASS_FLD || opcode == XED_ICLASS_FST) {
+    instrumentation::handle_fpu_mov(ins);
+    return;
+  } else if (opcode == XED_ICLASS_FSTP) {
+    instrumentation::handle_fpu_mov(ins, true);
+    return;
+  } else if (opcode == XED_ICLASS_FLDZ) {
+    instrumentation::handle_fpu_const_load(ins, 0);
+    return;
+  }
+
+  // We anticipate all arithmetic to
+  // interact with the FPU stack.
   if (opcode == XED_ICLASS_FCHS) {
     instrumentation::handle_sign_change(ins);
     return;
@@ -141,6 +152,18 @@ VOID routine(RTN rtn, VOID *v) {
 /*   argc, argv are the entire command line: pin -t <toolname> -- ...    */
 /* ===================================================================== */
 
+#define NDEBUG
+namespace test {
+void instruction(INS ins, void *v) {
+  if (!dde_state.to_instrument)
+    return;
+
+  OPCODE opcode = INS_Opcode(ins);
+  if (opcode == XED_ICLASS_FLD)
+    show_ins(ins);
+}
+} // namespace test
+
 int main(int argc, char *argv[]) {
   // Initialize pin and symbols
   PIN_InitSymbols();
@@ -156,10 +179,9 @@ int main(int argc, char *argv[]) {
   // Final graph processing
   PIN_AddFiniFunction(final_processing, 0);
 #else
-  RTN_AddInstrumentFunction(test::routine, 0);
-  TRACE_AddInstrumentFunction(test::trace, 0);
-  // INS_AddInstrumentFunction(test::instruction, 0);
-  PIN_AddFiniFunction(test::final_processing, 0);
+  RTN_AddInstrumentFunction(routine, 0);
+  INS_AddInstrumentFunction(test::instruction, 0);
+  PIN_AddFiniFunction(final_processing, 0);
 #endif
 
   // Start the program, never returns
