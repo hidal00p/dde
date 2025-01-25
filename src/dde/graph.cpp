@@ -57,7 +57,11 @@ node *top() {
 uint8_t size() { return fpu_stack.size(); }
 } // namespace stack
 
-void show_node(node *n, std::string prefix) {
+bool is_visited(std::string uuid, uuid_list visited) {
+  return std::find(visited.begin(), visited.end(), uuid) != visited.end();
+}
+
+void show_node(node *n, std::string prefix, uuid_list &visited) {
   std::cout << prefix << n->uuid << " " << n->value << " " << n->is_active;
 
   std::string tr_str = n->tr == transformation::NONE  ? ""
@@ -68,21 +72,27 @@ void show_node(node *n, std::string prefix) {
                                                       : "~";
   std::cout << " " << tr_str << std::endl;
 
+  if (is_visited(n->uuid, visited))
+    return;
+
   for (uint i = 0; i < n->n_operands; i++) {
-    show_node(n->operands[i], prefix + " ");
+    show_node(n->operands[i], prefix + " ", visited);
+    visited.push_back(n->uuid);
   }
 }
 
 void show_mem_map() {
-  std::vector<std::string> visited;
+  uuid_list visited;
   for (const auto &[addr, n] : mem_map) {
-    if (n->operands == nullptr || !n->output ||
-        std::find(visited.begin(), visited.end(), n->uuid) != visited.end())
+    uuid_list visited_parents;
+    if (n->operands == nullptr || !n->output || is_visited(n->uuid, visited))
       continue;
-    show_node(n, "");
+    show_node(n, "", visited_parents);
     visited.push_back(n->uuid);
   }
 }
+
+void clean_mem_map() { mem_map.clear(); }
 
 namespace mem {
 void insert_node(uint64_t ef_addr, node *n) { mem_map[ef_addr] = n; };

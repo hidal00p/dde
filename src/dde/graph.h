@@ -58,8 +58,10 @@ node *top();
 uint8_t size();
 } // namespace stack
 
+typedef std::vector<std::string> uuid_list;
 void show_node(node *n);
 void show_mem_map();
+void clean_mem_map();
 
 namespace mem {
 void insert_node(uint64_t ef_addr, node *n);

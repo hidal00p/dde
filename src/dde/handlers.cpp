@@ -6,6 +6,12 @@
 
 #include <iostream>
 
+bool is_abi_reg(REG reg) {
+  bool xmm_reg = reg >= REG_XMM_BASE && reg <= REG_XMM_SSE_LAST;
+  bool rax_reg = reg == REG_RAX;
+  return xmm_reg || rax_reg;
+}
+
 namespace analysis {
 void track_reg_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, ADDRINT ea) {
   // Primarily to handle parameter
@@ -304,7 +310,7 @@ void handle_reg_mov(INS ins) {
 
   else if (mov_ctx->dest.type == OprType::MEM) {
     REG src_reg = mov_ctx->src.origin.reg;
-    if (src_reg == REG_RBP || src_reg == REG_RDI || src_reg == REG_AL)
+    if (!is_abi_reg(src_reg))
       return;
 
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,
@@ -315,8 +321,7 @@ void handle_reg_mov(INS ins) {
     // Implicit reg to reg
     REG dest_reg = mov_ctx->dest.origin.reg;
     REG src_reg = mov_ctx->src.origin.reg;
-    if (dest_reg == REG_RBP || dest_reg == REG_RDI || dest_reg == REG_EAX ||
-        dest_reg == REG_ESI || src_reg == REG_ESI)
+    if (!is_abi_reg(dest_reg) || !is_abi_reg(src_reg))
       return;
 
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,

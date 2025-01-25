@@ -83,7 +83,7 @@ INT32 usage() {
   return -1;
 }
 
-void final_processing(INT32 code, VOID *v) { show_mem_map(); }
+void final_processing(INT32 code, VOID *v) {}
 
 void image(IMG img, void *v) {
   if (!IMG_IsMainExecutable(img))
@@ -100,6 +100,11 @@ void image(IMG img, void *v) {
       sec_info.data.end = sec_info.rodata.start + SEC_Size(sec);
     }
   }
+}
+
+void dump_graph() {
+  show_mem_map();
+  clean_mem_map();
 }
 
 void start_instr() { dde_state.to_instrument = true; }
@@ -144,6 +149,13 @@ VOID routine(RTN rtn, VOID *v) {
   if (RTN_Name(rtn).find("__dde_mark_stop") != std::string::npos) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_marking, IARG_END);
+    RTN_Close(rtn);
+    return;
+  }
+
+  if (RTN_Name(rtn).find("__dde_dump_graph") != std::string::npos) {
+    RTN_Open(rtn);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)dump_graph, IARG_END);
     RTN_Close(rtn);
     return;
   }

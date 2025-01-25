@@ -48,7 +48,6 @@ class Graph:
 
         # If node was parsed before we just return it
         if node := self.node_map.get(gene.uuid):
-            self.consume_node(node)
             return node
 
         parents = []
@@ -64,11 +63,6 @@ class Graph:
         self.node_map[node.gene.uuid] = node
 
         return node
-
-    def consume_node(self, node: Node):
-        for p_node in node.parents:
-            self.graph_file.readline()
-            self.consume_node(p_node)
 
     def eval_jacobian(self):
         assert self.results
@@ -87,12 +81,15 @@ class Graph:
                 self.propagate_derivative(node)
 
             if self.verbose:
-                self.show_derivatives(result)
+                visited = set()
+                self.show_derivatives(result, visited)
 
-    def show_derivatives(self, node: Node, prefix=""):
-        print(f"{prefix} {node.gene.uuid} {node.der}")
-        for p_node in node.parents:
-            self.show_derivatives(p_node, prefix + " ")
+    def show_derivatives(self, node: Node, visited: set[str], prefix=""):
+        print(f"{prefix}{node.gene.uuid} {node.der}")
+        if node.gene.uuid not in visited:
+            for p_node in node.parents:
+                self.show_derivatives(p_node, visited, prefix + " ")
+            visited.add(node.gene.uuid)
 
     def clear_derivtives(self, node: Node):
         for p_node in node.parents:
