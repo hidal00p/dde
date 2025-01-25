@@ -20,14 +20,24 @@ void track_reg_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, ADDRINT ea) {
       reg::write_to_other_reg(mov_ctx->src.origin.reg,
                               mov_ctx->dest.origin.reg);
 
-    else if (mov_ctx->dest.type == OprType::MEM)
+    else if (mov_ctx->dest.type == OprType::MEM) {
+      if (mem::is_node_recorded(ea) && mem::expect_node(ea)->output) {
+        reg::expect_node(mov_ctx->src.origin.reg)->uuid =
+            mem::expect_node(ea)->uuid;
+        reg::expect_node(mov_ctx->src.origin.reg)->output = true;
+      }
+
       reg::write_to_mem(mov_ctx->src.origin.reg, ea);
+
+    }
 
     else
       assert(false);
 
-  } else
+  } else {
+    show_ins(mov_ctx->ins);
     assert(false);
+  }
 }
 
 void track_fpu_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
@@ -51,6 +61,7 @@ void track_fpu_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
       if (vm_ctx.is_var_marked) {
         std::string s(1, vm_ctx.var_mark_buffer[0]);
         n->uuid = s;
+        n->output = vm_ctx.output;
       }
 
     } else
@@ -61,6 +72,12 @@ void track_fpu_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
   } else if (mov_ctx->src.type == OprType::REGSTR) {
 
     if (mov_ctx->dest.type == OprType::MEM) {
+
+      if (mem::is_node_recorded(ea) && mem::expect_node(ea)->output) {
+        stack::top()->uuid = mem::expect_node(ea)->uuid;
+        stack::top()->output = true;
+      }
+
       mem::insert_node(ea, stack::top());
       if (is_pop)
         stack::pop();
@@ -78,6 +95,7 @@ void track_fpu_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
     if (vm_ctx.is_var_marked) {
       std::string s(1, vm_ctx.var_mark_buffer[0]);
       n->uuid = s;
+      n->output = vm_ctx.output;
     }
     stack::push(n);
   }
@@ -227,6 +245,7 @@ namespace instrumentation {
 binary_op::ctx *get_bop_operands(INS ins) {
   static const uint8_t SRC_IDX = 1, DEST_IDX = 0;
   binary_op::ctx *bop_ctx = new binary_op::ctx();
+  bop_ctx->ins = ins;
 
   if (INS_OperandIsMemory(ins, DEST_IDX)) {
     bop_ctx->dest = {
@@ -285,7 +304,7 @@ void handle_reg_mov(INS ins) {
 
   else if (mov_ctx->dest.type == OprType::MEM) {
     REG src_reg = mov_ctx->src.origin.reg;
-    if (src_reg == REG_RBP || src_reg == REG_RDI)
+    if (src_reg == REG_RBP || src_reg == REG_RDI || src_reg == REG_AL)
       return;
 
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,
@@ -295,7 +314,9 @@ void handle_reg_mov(INS ins) {
   } else {
     // Implicit reg to reg
     REG dest_reg = mov_ctx->dest.origin.reg;
-    if (dest_reg == REG_RBP || dest_reg == REG_RDI || dest_reg == REG_EAX)
+    REG src_reg = mov_ctx->src.origin.reg;
+    if (dest_reg == REG_RBP || dest_reg == REG_RDI || dest_reg == REG_EAX ||
+        dest_reg == REG_ESI || src_reg == REG_ESI)
       return;
 
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,

@@ -105,13 +105,15 @@ void image(IMG img, void *v) {
 void start_instr() { dde_state.to_instrument = true; }
 void stop_instr() { dde_state.to_instrument = false; }
 
-void start_marking(const char *mark) {
+void start_marking(const char *mark, bool output) {
   vm_ctx.is_var_marked = true;
+  vm_ctx.output = output;
   vm_ctx.var_mark_buffer[0] = mark[0];
 }
 
 void stop_marking() {
   vm_ctx.is_var_marked = false;
+  vm_ctx.output = false;
   vm_ctx.var_mark_buffer[0] = 0;
 }
 
@@ -133,7 +135,8 @@ VOID routine(RTN rtn, VOID *v) {
   if (RTN_Name(rtn).find("__dde_mark_start") != std::string::npos) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)start_marking,
-                   IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_END);
+                   IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
+                   IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
     RTN_Close(rtn);
     return;
   }

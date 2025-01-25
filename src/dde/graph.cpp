@@ -1,4 +1,5 @@
 #include "graph.h"
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <random>
@@ -73,25 +74,13 @@ void show_node(node *n, std::string prefix) {
 }
 
 void show_mem_map() {
-  std::vector<node *> uniq_nodes;
-  for (const auto &[addr1, n1] : mem_map) {
-    bool uniq = true;
-
-    for (const auto &n : uniq_nodes) {
-      if (n->uuid == n1->uuid) {
-        uniq = false;
-        break;
-      }
-    }
-
-    if (uniq_nodes.size() == 0 || uniq)
-      uniq_nodes.push_back(n1);
-  }
-
-  for (const auto &n : uniq_nodes) {
-    if (n->operands == nullptr)
+  std::vector<std::string> visited;
+  for (const auto &[addr, n] : mem_map) {
+    if (n->operands == nullptr || !n->output ||
+        std::find(visited.begin(), visited.end(), n->uuid) != visited.end())
       continue;
     show_node(n, "");
+    visited.push_back(n->uuid);
   }
 }
 

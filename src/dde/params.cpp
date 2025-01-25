@@ -5,5 +5,5 @@ bool DataRegion::within_range(ADDRINT ea) {
 }
 
 Sections sec_info = {.data = {}, .rodata = {}};
-DdeState dde_state = {.to_instrument = false};
+DdeState dde_state;
 var_mark_ctx vm_ctx;

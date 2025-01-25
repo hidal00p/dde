@@ -27,6 +27,7 @@ struct node {
   node **operands = nullptr;
   uint8_t n_operands = 0;
   transformation tr = transformation::NONE;
+  bool output = false;
 
   node(double val) {
     uuid = get_uuid();

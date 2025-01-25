@@ -25,6 +25,7 @@ extern DdeState dde_state;
 
 struct var_mark_ctx {
   bool is_var_marked = false;
+  bool output = false;
   char var_mark_buffer[1] = {0};
 };
 
