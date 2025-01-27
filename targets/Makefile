@@ -1,10 +1,14 @@
 TARGETS = polynom.exe
+OBJS = graph.o
 CPP_FLAGS = -std=c++17 -g -mfpmath=387
 
 all: $(TARGETS)
 
-%.exe: %.cpp
-	g++ $(CPP_FLAGS) $< -o $*.exe
+%.exe: %.cpp $(OBJS)
+	g++ $(CPP_FLAGS) $< $(OBJS) -o $*.exe
+
+%.o: %.cpp
+	g++ -c $<
 
 clean:
 	rm -rf *.exe
