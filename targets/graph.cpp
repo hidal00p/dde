@@ -53,25 +53,41 @@ std::string Node::str_code(std::string prefix) {
 }
 
 void Node::differentiate() {
+  static std::string BINARY_OPS[] = {"+", "-", "/", "*"};
+  static uint8_t bop_size = sizeof(BINARY_OPS) / sizeof(BINARY_OPS[0]);
   if (op == NOP)
     return;
 
-  Node *rhs1 = parents[0];
-  Node *rhs2 = parents[1];
-  if (op == "*") {
-    rhs1->der += rhs2->val * der;
-    rhs2->der += rhs1->val * der;
-  } else if (op == "+") {
-    rhs1->der += der;
-    rhs2->der += der;
-  } else if (op == "-") {
-    rhs1->der += der;
-    rhs2->der += -der;
-  } else if (op == "/") {
-    rhs1->der += der / rhs2->val;
-    rhs2->der += -rhs1->val * der / (rhs2->val * rhs2->val);
-  } else
-    assert(false);
+  bool bin_op = false;
+  for (uint8_t i = 0; i < bop_size; i++) {
+    bin_op |= BINARY_OPS[i] == op;
+    if (bin_op)
+      break;
+  }
+
+  if (bin_op) {
+    Node *rhs1 = parents[0];
+    Node *rhs2 = parents[1];
+    if (op == "*") {
+      rhs1->der += rhs2->val * der;
+      rhs2->der += rhs1->val * der;
+    } else if (op == "+") {
+      rhs1->der += der;
+      rhs2->der += der;
+    } else if (op == "-") {
+      rhs1->der += der;
+      rhs2->der += -der;
+    } else if (op == "/") {
+      rhs1->der += der / rhs2->val;
+      rhs2->der += -rhs1->val * der / (rhs2->val * rhs2->val);
+    } else
+      assert(false && "Unsupported binary op");
+
+  } else {
+    if (op != "~")
+      assert(false && "Unsupported binary op");
+    parents[0]->der += -der;
+  }
 }
 
 Graph::Graph(std::string file_name) {
