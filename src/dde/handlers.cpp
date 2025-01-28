@@ -173,7 +173,8 @@ void track_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea) {
   }
 }
 
-void track_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop, ADDRINT ea) {
+void track_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
+               bool is_reverse, ADDRINT ea) {
   // It is implied that the 2nd operand is a register
 
   node *src_node, *dest_node;
@@ -182,9 +183,11 @@ void track_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop, ADDRINT ea) {
     assert(!is_pop);
     src_node = mem::expect_node(ea);
     dest_node = stack::pop();
-    stack::push(new node(
-        dest_node->value / src_node->value, 2,
-        new node *[] { dest_node, src_node }, transformation::DIV));
+    double value = is_reverse ? src_node->value / dest_node->value
+                              : dest_node->value / src_node->value;
+    node **operands = is_reverse ? new node *[] { src_node, dest_node }
+                                 : new node *[] { dest_node, src_node };
+    stack::push(new node(value, 2, operands, transformation::DIV));
   } else if (div_ctx->src.type == OprType::REGSTR) {
     uint8_t src_idx =
         stack::size() - 1 - get_fpu_stack_idx_from_st(div_ctx->src.origin.reg);
@@ -193,11 +196,12 @@ void track_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop, ADDRINT ea) {
 
     src_node = stack::at(src_idx);
     dest_node = stack::at(dest_idx);
+    double value = is_reverse ? src_node->value / dest_node->value
+                              : dest_node->value / src_node->value;
+    node **operands = is_reverse ? new node *[] { src_node, dest_node }
+                                 : new node *[] { dest_node, src_node };
 
-    stack::at(dest_idx,
-              new node(
-                  dest_node->value / src_node->value, 2,
-                  new node *[] { dest_node, src_node }, transformation::DIV));
+    stack::at(dest_idx, new node(value, 2, operands, transformation::DIV));
 
     if (is_pop)
       assert(stack::pop()->uuid == src_node->uuid);
@@ -206,7 +210,8 @@ void track_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop, ADDRINT ea) {
   }
 }
 
-void track_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop, ADDRINT ea) {
+void track_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop,
+               bool is_reverse, ADDRINT ea) {
   // It is implied that the 2nd operand is a register
 
   node *src_node, *dest_node;
@@ -215,9 +220,11 @@ void track_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop, ADDRINT ea) {
     assert(!is_pop);
     src_node = mem::expect_node(ea);
     dest_node = stack::pop();
-    stack::push(new node(
-        dest_node->value - src_node->value, 2,
-        new node *[] { dest_node, src_node }, transformation::SUB));
+    double value = is_reverse ? src_node->value - dest_node->value
+                              : dest_node->value - src_node->value;
+    node **operands = is_reverse ? new node *[] { src_node, dest_node }
+                                 : new node *[] { dest_node, src_node };
+    stack::push(new node(value, 2, operands, transformation::SUB));
   } else if (sub_ctx->src.type == OprType::REGSTR) {
     uint8_t src_idx =
         stack::size() - 1 - get_fpu_stack_idx_from_st(sub_ctx->src.origin.reg);
@@ -227,10 +234,11 @@ void track_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop, ADDRINT ea) {
     src_node = stack::at(src_idx);
     dest_node = stack::at(dest_idx);
 
-    stack::at(dest_idx,
-              new node(
-                  dest_node->value - src_node->value, 2,
-                  new node *[] { dest_node, src_node }, transformation::SUB));
+    double value = is_reverse ? src_node->value - dest_node->value
+                              : dest_node->value - src_node->value;
+    node **operands = is_reverse ? new node *[] { src_node, dest_node }
+                                 : new node *[] { dest_node, src_node };
+    stack::at(dest_idx, new node(value, 2, operands, transformation::SUB));
 
     if (is_pop)
       assert(stack::pop()->uuid == src_node->uuid);
@@ -285,7 +293,8 @@ binary_op::ctx *get_bop_operands(INS ins) {
   return bop_ctx;
 }
 
-void handle_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func, bool is_pop) {
+void handle_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
+                       bool is_pop) {
 
   // For FP instructions we assume that memory can only be a source operand.
   // This is a valid assumption, since all the FPU arithmetic operations are
@@ -296,6 +305,24 @@ void handle_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func, bool is_pop) {
   else if (bop_ctx->src.type == OprType::REGSTR)
     INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_CONST_CONTEXT, IARG_PTR,
                    bop_ctx, IARG_BOOL, is_pop, IARG_ADDRINT, 0, IARG_END);
+  else
+    assert(false);
+}
+
+void handle_non_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
+                           bool is_pop, bool is_reverse) {
+
+  // For FP instructions we assume that memory can only be a source operand.
+  // This is a valid assumption, since all the FPU arithmetic operations are
+  // proxied via the FPU stack registers.
+  if (bop_ctx->src.type == OprType::MEM)
+    INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_CONST_CONTEXT, IARG_PTR,
+                   bop_ctx, IARG_BOOL, is_pop, IARG_BOOL, is_reverse,
+                   IARG_MEMORYREAD_EA, IARG_END);
+  else if (bop_ctx->src.type == OprType::REGSTR)
+    INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_CONST_CONTEXT, IARG_PTR,
+                   bop_ctx, IARG_BOOL, is_pop, IARG_BOOL, is_reverse,
+                   IARG_ADDRINT, 0, IARG_END);
   else
     assert(false);
 }
@@ -367,19 +394,23 @@ void handle_fpu_const_load(INS ins, uint8_t constant) {
 }
 
 void handle_add(INS ins, bool is_pop) {
-  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_add, is_pop);
+  handle_commut_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_add,
+                    is_pop);
 }
 
 void handle_mul(INS ins, bool is_pop) {
-  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mul, is_pop);
+  handle_commut_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mul,
+                    is_pop);
 }
 
-void handle_div(INS ins, bool is_pop) {
-  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_div, is_pop);
+void handle_div(INS ins, bool is_pop, bool is_reverse) {
+  handle_non_commut_bop(ins, get_bop_operands(ins),
+                        (AFUNPTR)analysis::track_div, is_pop, is_reverse);
 }
 
-void handle_sub(INS ins, bool is_pop) {
-  handle_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_sub, is_pop);
+void handle_sub(INS ins, bool is_pop, bool is_reverse) {
+  handle_non_commut_bop(ins, get_bop_operands(ins),
+                        (AFUNPTR)analysis::track_sub, is_pop, is_reverse);
 }
 
 void handle_sign_change(INS ins) {

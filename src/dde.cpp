@@ -30,6 +30,9 @@ VOID instruction(INS ins, VOID *v) {
   } else if (opcode == XED_ICLASS_FLDZ) {
     instrumentation::handle_fpu_const_load(ins, 0);
     return;
+  } else if (opcode == XED_ICLASS_FLD1) {
+    instrumentation::handle_fpu_const_load(ins, 1.0);
+    return;
   }
 
   // We anticipate all arithmetic to
@@ -61,6 +64,12 @@ VOID instruction(INS ins, VOID *v) {
   } else if (opcode == XED_ICLASS_FDIVP) {
     instrumentation::handle_div(ins, true);
     return;
+  } else if (opcode == XED_ICLASS_FDIVR) {
+    instrumentation::handle_div(ins, false, true);
+    return;
+  } else if (opcode == XED_ICLASS_FDIVR) {
+    instrumentation::handle_div(ins, true, true);
+    return;
   }
 
   if (opcode == XED_ICLASS_FSUB) {
@@ -68,6 +77,12 @@ VOID instruction(INS ins, VOID *v) {
     return;
   } else if (opcode == XED_ICLASS_FSUBP) {
     instrumentation::handle_sub(ins, true);
+    return;
+  } else if (opcode == XED_ICLASS_FSUBR) {
+    instrumentation::handle_sub(ins, false, true);
+    return;
+  } else if (opcode == XED_ICLASS_FSUBRP) {
+    instrumentation::handle_sub(ins, true, true);
     return;
   }
 }

@@ -13,9 +13,11 @@ void track_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea);
 
 void track_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea);
 
-void track_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop, ADDRINT ea);
+void track_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
+               bool is_reverse, ADDRINT ea);
 
-void track_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop, ADDRINT ea);
+void track_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop,
+               bool is_reverse, ADDRINT ea);
 
 void track_sch();
 
@@ -24,7 +26,11 @@ void track_sch();
 namespace instrumentation {
 binary_op::ctx *get_bop_operands(INS ins);
 
-void handle_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func, bool is_pop);
+void handle_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
+                       bool is_pop);
+
+void handle_non_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
+                           bool is_pop, bool is_reverse);
 
 void handle_reg_mov(INS ins);
 
@@ -36,9 +42,9 @@ void handle_add(INS ins, bool is_pop = false);
 
 void handle_mul(INS ins, bool is_pop = false);
 
-void handle_div(INS ins, bool is_pop = false);
+void handle_div(INS ins, bool is_pop = false, bool is_reverse = false);
 
-void handle_sub(INS ins, bool is_pop = false);
+void handle_sub(INS ins, bool is_pop = false, bool is_reverse = false);
 
 void handle_sign_change(INS ins);
 } // namespace instrumentation
