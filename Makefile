@@ -21,6 +21,9 @@ format:
 clean:
 	rm -rf *.out
 	$(MAKE) -C $(SRC_DIR)/ clean
+	$(MAKE) clean-targets
+
+clean-targets:
 	$(MAKE) -C $(TARGETS_DIR)/ clean
 
-.PHONY: format targets tools
+.PHONY: clean-targets format targets tools

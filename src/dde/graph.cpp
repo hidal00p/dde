@@ -75,7 +75,8 @@ void show_node(node *n, std::string prefix, uuid_list &visited) {
                        : n->tr == transformation::MUL ? "*"
                        : n->tr == transformation::DIV ? "/"
                        : n->tr == transformation::SUB ? "-"
-                                                      : "~";
+                       : n->tr == transformation::CHS ? "~"
+                                                      : "sin";
   graph_file << " " << tr_str << std::endl;
 
   if (is_visited(n->uuid, visited))
@@ -91,9 +92,10 @@ void show_mem_map() {
   graph_file.open("/home/hidaloop/.folder/random/pinenv/dde/scripts/prog.gr");
   uuid_list visited;
   for (const auto &[addr, n] : mem_map) {
-    uuid_list visited_parents;
     if (n->operands == nullptr || !n->output || is_visited(n->uuid, visited))
       continue;
+
+    uuid_list visited_parents;
     show_node(n, "", visited_parents);
     visited.push_back(n->uuid);
   }

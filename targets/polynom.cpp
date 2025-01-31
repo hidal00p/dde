@@ -45,9 +45,12 @@ void newton(double x0) {
   double eps = 10;
   do {
     // Forward step
+    // TODO:
+    // 1. Function calls look less magical than macros
+    // 2. Var marking after declaration.
     DDE_START
     DDE_VAR("x", double x = x0)
-    DDE_OUTPUT("f_x", double f_x = 0);
+    DDE_OUTPUT("f_x", double f_x = 0)
     f_x = lib::f(x);
     DDE_STOP
 

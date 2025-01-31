@@ -22,9 +22,10 @@ void track_reg_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, ADDRINT ea) {
     mem::write_to_reg(ea, mov_ctx->dest.origin.reg);
 
   } else if (mov_ctx->src.type == OprType::REGSTR) {
-    if (mov_ctx->dest.type == OprType::REGSTR)
+    if (mov_ctx->dest.type == OprType::REGSTR) {
       reg::write_to_other_reg(mov_ctx->src.origin.reg,
                               mov_ctx->dest.origin.reg);
+    }
 
     else if (mov_ctx->dest.type == OprType::MEM) {
       if (mem::is_node_recorded(ea) && mem::expect_node(ea)->output) {
@@ -34,7 +35,6 @@ void track_reg_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, ADDRINT ea) {
       }
 
       reg::write_to_mem(mov_ctx->src.origin.reg, ea);
-
     }
 
     else

@@ -5,14 +5,63 @@
 #include "dde/params.h"
 
 #include <cassert>
+#include <cmath>
 #include <iostream>
 
+bool prev_to_instrument;
+
+void handle_ret(CONTEXT *ctx, ADDRINT branch_addr, ADDRINT callee_addr) {
+
+  std::string branch = RTN_FindNameByAddress(branch_addr);
+  std::string callee = RTN_FindNameByAddress(callee_addr);
+
+  if (!rtn_is_valid_transform(branch) && !rtn_is_valid_transform(callee)) {
+    return;
+  }
+
+  if (call_pair.reversed(branch, callee)) {
+    call_pair.to.clear();
+    call_pair.from.clear();
+    dde_state.to_instrument = true;
+  }
+}
+
+void handle_call(CONTEXT *ctx, ADDRINT branch_addr, ADDRINT callee_addr) {
+  std::string branch = RTN_FindNameByAddress(branch_addr);
+  std::string callee = RTN_FindNameByAddress(callee_addr);
+
+  if (!rtn_is_valid_transform(branch) && !rtn_is_valid_transform(callee)) {
+    return;
+  }
+
+  call_pair.to = branch;
+  call_pair.from = callee;
+  dde_state.to_instrument = false;
+  node *n = reg::expect_node(REG_XMM0);
+  node *y = new node(
+      std::sin(n->value), 1, new node *[] { n }, transformation::SIN);
+  reg::insert_node(REG_XMM0, y);
+}
+
 VOID instruction(INS ins, VOID *v) {
+  if (INS_IsRet(ins) && !call_pair.empty()) {
+    ADDRINT ins_addr = INS_Address(ins);
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)handle_ret, IARG_CONTEXT,
+                   IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, ins_addr, IARG_END);
+    return;
+  }
+
   if (!dde_state.to_instrument)
     return;
 
-  OPCODE opcode = INS_Opcode(ins);
+  if (INS_IsCall(ins)) {
+    ADDRINT ins_addr = INS_Address(ins);
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)handle_call, IARG_CONTEXT,
+                   IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, ins_addr, IARG_END);
+    return;
+  }
 
+  OPCODE opcode = INS_Opcode(ins);
   // Register read and write
   if (opcode == XED_ICLASS_MOVSD_XMM || opcode == XED_ICLASS_MOV ||
       opcode == XED_ICLASS_MOVAPD || opcode == XED_ICLASS_MOVQ) {
@@ -105,12 +154,14 @@ void image(IMG img, void *v) {
     return;
 
   for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec)) {
-    if (SEC_Name(sec) == ".rodata") {
+    std::string sec_name = SEC_Name(sec);
+
+    if (sec_name == ".rodata") {
       sec_info.rodata.start = SEC_Address(sec);
       sec_info.rodata.end = sec_info.rodata.start + SEC_Size(sec);
     }
 
-    if (SEC_Name(sec) == ".data") {
+    if (sec_name == ".data") {
       sec_info.data.start = SEC_Address(sec);
       sec_info.data.end = sec_info.rodata.start + SEC_Size(sec);
     }
@@ -138,21 +189,23 @@ void stop_marking() {
 }
 
 VOID routine(RTN rtn, VOID *v) {
-  if (RTN_Name(rtn).find("__dde_start") != std::string::npos) {
+  std::string rtn_name = RTN_Name(rtn);
+
+  if (rtn_name.find("__dde_start") != std::string::npos) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)start_instr, IARG_END);
     RTN_Close(rtn);
     return;
   }
 
-  if (RTN_Name(rtn).find("__dde_stop") != std::string::npos) {
+  if (rtn_name.find("__dde_stop") != std::string::npos) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_instr, IARG_END);
     RTN_Close(rtn);
     return;
   }
 
-  if (RTN_Name(rtn).find("__dde_mark_start") != std::string::npos) {
+  if (rtn_name.find("__dde_mark_start") != std::string::npos) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)start_marking,
                    IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
@@ -161,14 +214,14 @@ VOID routine(RTN rtn, VOID *v) {
     return;
   }
 
-  if (RTN_Name(rtn).find("__dde_mark_stop") != std::string::npos) {
+  if (rtn_name.find("__dde_mark_stop") != std::string::npos) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_marking, IARG_END);
     RTN_Close(rtn);
     return;
   }
 
-  if (RTN_Name(rtn).find("__dde_dump_graph") != std::string::npos) {
+  if (rtn_name.find("__dde_dump_graph") != std::string::npos) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)dump_graph, IARG_END);
     RTN_Close(rtn);
@@ -185,12 +238,27 @@ VOID routine(RTN rtn, VOID *v) {
 #define NDEBUG
 namespace test {
 void instruction(INS ins, void *v) {
+
+  if (INS_IsRet(ins) && !call_pair.empty()) {
+    ADDRINT ins_addr = INS_Address(ins);
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)handle_ret, IARG_CONTEXT,
+                   IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, ins_addr, IARG_END);
+    return;
+  }
+
   if (!dde_state.to_instrument)
     return;
 
-  OPCODE opcode = INS_Opcode(ins);
-  if (opcode == XED_ICLASS_FLD)
+  if (INS_IsCall(ins)) {
+    ADDRINT ins_addr = INS_Address(ins);
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)handle_call, IARG_CONTEXT,
+                   IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, ins_addr, IARG_END);
+
+  }
+
+  else {
     show_ins(ins);
+  }
 }
 } // namespace test
 
@@ -209,6 +277,7 @@ int main(int argc, char *argv[]) {
   // Final graph processing
   PIN_AddFiniFunction(final_processing, 0);
 #else
+  IMG_AddInstrumentFunction(image, 0);
   RTN_AddInstrumentFunction(routine, 0);
   INS_AddInstrumentFunction(test::instruction, 0);
   PIN_AddFiniFunction(final_processing, 0);

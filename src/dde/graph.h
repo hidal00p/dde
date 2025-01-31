@@ -14,7 +14,7 @@
  *
  * NOTE: might want to wrap things into a shared_ptr
  */
-enum transformation { NONE, MUL, ADD, DIV, SUB, CHS };
+enum transformation { NONE, MUL, ADD, DIV, SUB, CHS, SIN };
 
 std::string get_uuid();
 

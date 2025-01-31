@@ -1,6 +1,6 @@
-TARGETS = polynom.exe
-OBJS = graph.o
-CPP_FLAGS = -std=c++17 -g -mfpmath=387
+TARGETS = call.exe
+OBJS = 
+CPP_FLAGS = -std=c++17 -g -fno-plt -mfpmath=387
 
 all: $(TARGETS)
 

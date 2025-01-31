@@ -31,4 +31,17 @@ struct var_mark_ctx {
 
 extern var_mark_ctx vm_ctx;
 
+struct CallPair {
+  std::string to;
+  std::string from;
+
+  bool reversed(std::string new_to, std::string new_from);
+  bool empty();
+};
+
+extern CallPair call_pair;
+
+bool rtn_is_valid_transform(std::string rtn);
+extern const std::vector<std::string> intrinsic_routines;
+
 #endif
