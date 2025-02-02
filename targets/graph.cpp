@@ -1,5 +1,6 @@
 #include "graph.h"
 #include <cassert>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -31,6 +32,16 @@ Node::Node(std::string raw_repr) {
   uuid = tokens[0];
   val = std::stod(tokens[1]);
   op = tokens.size() != 4 ? NOP : tokens[3];
+
+  static std::string BINARY_OPS[] = {"+", "-", "/", "*"};
+  static uint8_t bop_size = sizeof(BINARY_OPS) / sizeof(BINARY_OPS[0]);
+
+  bop = false;
+  for (uint8_t i = 0; i < bop_size; i++) {
+    bop |= BINARY_OPS[i] == op;
+    if (bop)
+      break;
+  }
 }
 
 std::string Node::str_code(std::string prefix) {
@@ -53,19 +64,10 @@ std::string Node::str_code(std::string prefix) {
 }
 
 void Node::differentiate() {
-  static std::string BINARY_OPS[] = {"+", "-", "/", "*"};
-  static uint8_t bop_size = sizeof(BINARY_OPS) / sizeof(BINARY_OPS[0]);
   if (op == NOP)
     return;
 
-  bool bin_op = false;
-  for (uint8_t i = 0; i < bop_size; i++) {
-    bin_op |= BINARY_OPS[i] == op;
-    if (bin_op)
-      break;
-  }
-
-  if (bin_op) {
+  if (bop) {
     Node *rhs1 = parents[0];
     Node *rhs2 = parents[1];
     if (op == "*") {
@@ -84,9 +86,14 @@ void Node::differentiate() {
       assert(false && "Unsupported binary op");
 
   } else {
-    if (op != "~")
+    if (op == "~")
+      parents[0]->der += -der;
+    else if (op == "sin")
+      parents[0]->der += std::cos(parents[0]->val) * der;
+    else if (op == "cos")
+      parents[0]->der += -std::sin(parents[0]->val) * der;
+    else
       assert(false && "Unsupported binary op");
-    parents[0]->der += -der;
   }
 }
 
@@ -109,8 +116,10 @@ Node *Graph::parse_node() {
   if (parsed.count(n->uuid) > 0)
     return parsed[n->uuid];
 
-  if (n->op != NOP) {
+  if (n->bop) {
     n->parents.push_back(parse_node());
+    n->parents.push_back(parse_node());
+  } else if (n->op != NOP) {
     n->parents.push_back(parse_node());
   }
 

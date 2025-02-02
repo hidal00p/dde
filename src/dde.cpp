@@ -10,44 +10,9 @@
 
 bool prev_to_instrument;
 
-void handle_ret(CONTEXT *ctx, ADDRINT branch_addr, ADDRINT callee_addr) {
-
-  std::string branch = RTN_FindNameByAddress(branch_addr);
-  std::string callee = RTN_FindNameByAddress(callee_addr);
-
-  if (!rtn_is_valid_transform(branch) && !rtn_is_valid_transform(callee)) {
-    return;
-  }
-
-  if (call_pair.reversed(branch, callee)) {
-    call_pair.to.clear();
-    call_pair.from.clear();
-    dde_state.to_instrument = true;
-  }
-}
-
-void handle_call(CONTEXT *ctx, ADDRINT branch_addr, ADDRINT callee_addr) {
-  std::string branch = RTN_FindNameByAddress(branch_addr);
-  std::string callee = RTN_FindNameByAddress(callee_addr);
-
-  if (!rtn_is_valid_transform(branch) && !rtn_is_valid_transform(callee)) {
-    return;
-  }
-
-  call_pair.to = branch;
-  call_pair.from = callee;
-  dde_state.to_instrument = false;
-  node *n = reg::expect_node(REG_XMM0);
-  node *y = new node(
-      std::sin(n->value), 1, new node *[] { n }, transformation::SIN);
-  reg::insert_node(REG_XMM0, y);
-}
-
 VOID instruction(INS ins, VOID *v) {
   if (INS_IsRet(ins) && !call_pair.empty()) {
-    ADDRINT ins_addr = INS_Address(ins);
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)handle_ret, IARG_CONTEXT,
-                   IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, ins_addr, IARG_END);
+    instrumentation::handle_ret(ins);
     return;
   }
 
@@ -55,9 +20,7 @@ VOID instruction(INS ins, VOID *v) {
     return;
 
   if (INS_IsCall(ins)) {
-    ADDRINT ins_addr = INS_Address(ins);
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)handle_call, IARG_CONTEXT,
-                   IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, ins_addr, IARG_END);
+    instrumentation::handle_call(ins);
     return;
   }
 
@@ -177,15 +140,15 @@ void start_instr() { dde_state.to_instrument = true; }
 void stop_instr() { dde_state.to_instrument = false; }
 
 void start_marking(const char *mark, bool output) {
-  vm_ctx.is_var_marked = true;
-  vm_ctx.output = output;
-  vm_ctx.var_mark_buffer[0] = mark[0];
+  var_marking_ctx.is_var_marked = true;
+  var_marking_ctx.output = output;
+  var_marking_ctx.mark = mark; // this should be a deep copy
 }
 
 void stop_marking() {
-  vm_ctx.is_var_marked = false;
-  vm_ctx.output = false;
-  vm_ctx.var_mark_buffer[0] = 0;
+  var_marking_ctx.is_var_marked = false;
+  var_marking_ctx.output = false;
+  var_marking_ctx.mark.clear();
 }
 
 VOID routine(RTN rtn, VOID *v) {
@@ -237,29 +200,7 @@ VOID routine(RTN rtn, VOID *v) {
 
 #define NDEBUG
 namespace test {
-void instruction(INS ins, void *v) {
-
-  if (INS_IsRet(ins) && !call_pair.empty()) {
-    ADDRINT ins_addr = INS_Address(ins);
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)handle_ret, IARG_CONTEXT,
-                   IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, ins_addr, IARG_END);
-    return;
-  }
-
-  if (!dde_state.to_instrument)
-    return;
-
-  if (INS_IsCall(ins)) {
-    ADDRINT ins_addr = INS_Address(ins);
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)handle_call, IARG_CONTEXT,
-                   IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, ins_addr, IARG_END);
-
-  }
-
-  else {
-    show_ins(ins);
-  }
-}
+void instruction(INS ins, void *v) {}
 } // namespace test
 
 int main(int argc, char *argv[]) {

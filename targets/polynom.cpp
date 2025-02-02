@@ -2,6 +2,7 @@
 #include "graph.h"
 #include <cassert>
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <string>
 
@@ -14,7 +15,7 @@ const static std::string
 void newton(double);
 
 int main() {
-  std::vector<double> guesses = {-100.0, -10, 10, 100.0};
+  std::vector<double> guesses = {-4.0, -2.0};
   std::cout << DELIM << std::endl;
   for (double &x0 : guesses) {
     auto tic = std::chrono::high_resolution_clock::now();
@@ -31,13 +32,9 @@ int main() {
 namespace lib {
 double g(double x) { return (x - 1.345); }
 
-double p(double x) {
-  double y = (x + 6.09);
-  double z = (x * x - 1764); // +-42
-  return y * z;
-}
+double p(double x) { return std::cos(x); }
 
-double f(double x) { return g(x) * p(x); }
+double f(double x) { return std::cos(x) * (x - 4); }
 } // namespace lib
 
 void newton(double x0) {
@@ -64,5 +61,6 @@ void newton(double x0) {
     eps = std::abs(f_x);
 
   } while (++i < MAX_ITER && eps > TOL);
-  std::cout << "Solution: " << x0 << std::endl;
+  std::cout << "Solution: " << x0 << " = " << x0 / 3.14159265359 << "Pi"
+            << std::endl;
 }

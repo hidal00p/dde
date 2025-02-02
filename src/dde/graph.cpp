@@ -76,7 +76,8 @@ void show_node(node *n, std::string prefix, uuid_list &visited) {
                        : n->tr == transformation::DIV ? "/"
                        : n->tr == transformation::SUB ? "-"
                        : n->tr == transformation::CHS ? "~"
-                                                      : "sin";
+                       : n->tr == transformation::SIN ? "sin"
+                                                      : "cos";
   graph_file << " " << tr_str << std::endl;
 
   if (is_visited(n->uuid, visited))

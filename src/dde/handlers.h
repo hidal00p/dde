@@ -47,6 +47,10 @@ void handle_div(INS ins, bool is_pop = false, bool is_reverse = false);
 void handle_sub(INS ins, bool is_pop = false, bool is_reverse = false);
 
 void handle_sign_change(INS ins);
+
+void handle_call(INS ins);
+
+void handle_ret(INS ins);
 } // namespace instrumentation
 
 #endif

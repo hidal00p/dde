@@ -4,6 +4,7 @@
 #include "handlers.h"
 #include "params.h"
 
+#include <cmath>
 #include <iostream>
 
 bool is_abi_reg(REG reg) {
@@ -64,10 +65,9 @@ void track_fpu_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
       if (!node_recorded && !from_data_sec)
         mem::insert_node(ea, n);
 
-      if (vm_ctx.is_var_marked) {
-        std::string s(1, vm_ctx.var_mark_buffer[0]);
-        n->uuid = s;
-        n->output = vm_ctx.output;
+      if (var_marking_ctx.is_var_marked) {
+        n->uuid = var_marking_ctx.mark;
+        n->output = var_marking_ctx.output;
       }
 
     } else
@@ -98,10 +98,9 @@ void track_fpu_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
     assert(mov_ctx->src.type == OprType::IMM &&
            mov_ctx->dest.type == OprType::REGSTR);
     node *n = new node(mov_ctx->src.origin.imm);
-    if (vm_ctx.is_var_marked) {
-      std::string s(1, vm_ctx.var_mark_buffer[0]);
-      n->uuid = s;
-      n->output = vm_ctx.output;
+    if (var_marking_ctx.is_var_marked) {
+      n->uuid = var_marking_ctx.mark;
+      n->output = var_marking_ctx.output;
     }
     stack::push(n);
   }
@@ -253,6 +252,45 @@ void track_sch() {
       -1 * src_node->value, 1, new node *[] { src_node }, transformation::CHS));
 }
 
+void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
+  std::string branch_name = RTN_FindNameByAddress(branch_addr);
+  std::string callee_name = RTN_FindNameByAddress(callee_addr);
+
+  if (!rtn_is_valid_transform(branch_name) &&
+      !rtn_is_valid_transform(callee_name)) {
+    return;
+  }
+
+  call_pair.to = branch_name;
+  call_pair.from = callee_name;
+  dde_state.to_instrument = false;
+
+  // TODO: this is dangerous, what if nullopt
+  Intrinsic intr = get_intrinsic_from_rtn_name(branch_name).value();
+
+  node *n = reg::expect_node(REG_XMM0);
+  node *y = new node(
+      intr.intrinsic_call(n->value), 1, new node *[] { n }, intr.transf);
+
+  reg::insert_node(REG_XMM0, y);
+}
+
+void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
+
+  std::string branch_name = RTN_FindNameByAddress(branch_addr);
+  std::string callee_name = RTN_FindNameByAddress(callee_addr);
+
+  if (!rtn_is_valid_transform(branch_name) &&
+      !rtn_is_valid_transform(callee_name)) {
+    return;
+  }
+
+  if (call_pair.reversed(branch_name, callee_name)) {
+    call_pair.to.clear();
+    call_pair.from.clear();
+    dde_state.to_instrument = true;
+  }
+}
 } // namespace analysis
 
 namespace instrumentation {
@@ -415,5 +453,19 @@ void handle_sub(INS ins, bool is_pop, bool is_reverse) {
 
 void handle_sign_change(INS ins) {
   INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_sch, IARG_END);
+}
+
+void handle_call(INS ins) {
+  ADDRINT callee_addr = INS_Address(ins);
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_call_to_intrinsic,
+                 IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, callee_addr, IARG_END);
+}
+
+void handle_ret(INS ins) {
+  ADDRINT callee_addr = INS_Address(ins);
+  INS_InsertCall(ins, IPOINT_BEFORE,
+                 (AFUNPTR)analysis::track_ret_from_intrinsic,
+                 IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, callee_addr, IARG_END);
+  return;
 }
 } // namespace instrumentation

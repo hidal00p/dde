@@ -11,6 +11,7 @@
 struct Node {
   std::string uuid;
   std::string op;
+  bool bop;
   double val;
   double der = 0.0;
   std::vector<Node *> parents;

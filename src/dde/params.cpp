@@ -1,4 +1,5 @@
 #include "params.h"
+#include <cmath>
 
 bool DataRegion::within_range(ADDRINT ea) {
   return ea >= this->start && ea <= this->end;
@@ -12,18 +13,33 @@ bool CallPair::empty() { return to.empty() && from.empty(); }
 
 Sections sec_info = {.data = {}, .rodata = {}};
 DdeState dde_state;
-var_mark_ctx vm_ctx;
+VarMarkCtx var_marking_ctx;
 CallPair call_pair;
 
-const std::vector<std::string> intrinsic_routines = {"cos"};
+const std::map<std::string, Intrinsic> intrinsic_routines = {
+    {"cos", {.intrinsic_call = std::cos, .transf = transformation::COS}},
+    {"sin", {.intrinsic_call = std::sin, .transf = transformation::SIN}}};
+
 bool rtn_is_valid_transform(std::string rtn) {
   if (rtn.empty())
     return false;
 
-  for (auto &intr : intrinsic_routines) {
-    if (rtn.find(intr) != std::string::npos)
+  for (const auto &[name, intr] : intrinsic_routines) {
+    if (rtn.find(name) != std::string::npos)
       return true;
   }
 
   return false;
+}
+
+std::optional<Intrinsic> get_intrinsic_from_rtn_name(std::string rtn) {
+  if (rtn.empty())
+    return std::nullopt;
+
+  for (const auto &[name, intr] : intrinsic_routines) {
+    if (rtn.find(name) != std::string::npos)
+      return std::optional(intr);
+  }
+
+  return std::nullopt;
 }

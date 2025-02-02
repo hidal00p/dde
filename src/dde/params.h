@@ -1,7 +1,10 @@
 #ifndef DDE_PARAMS_H
 #define DDE_PARAMS_H
 
+#include "graph.h"
 #include "pin.H"
+#include <map>
+#include <optional>
 
 struct DataRegion {
   uint64_t start;
@@ -23,13 +26,13 @@ struct DdeState {
 
 extern DdeState dde_state;
 
-struct var_mark_ctx {
+struct VarMarkCtx {
   bool is_var_marked = false;
   bool output = false;
-  char var_mark_buffer[1] = {0};
+  std::string mark;
 };
 
-extern var_mark_ctx vm_ctx;
+extern VarMarkCtx var_marking_ctx;
 
 struct CallPair {
   std::string to;
@@ -41,7 +44,14 @@ struct CallPair {
 
 extern CallPair call_pair;
 
+typedef double (*IntrinsicCall)(double x);
+struct Intrinsic {
+  IntrinsicCall intrinsic_call;
+  transformation transf;
+};
+
 bool rtn_is_valid_transform(std::string rtn);
-extern const std::vector<std::string> intrinsic_routines;
+std::optional<Intrinsic> get_intrinsic_from_rtn_name(std::string rtn);
+extern const std::map<std::string, Intrinsic> intrinsic_routines;
 
 #endif
