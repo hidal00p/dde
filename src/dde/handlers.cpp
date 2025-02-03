@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <iostream>
+#define NDEBUG
 
 bool is_abi_reg(REG reg) {
   bool xmm_reg = reg >= REG_XMM_BASE && reg <= REG_XMM_SSE_LAST;
@@ -256,6 +257,10 @@ void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
   std::string branch_name = RTN_FindNameByAddress(branch_addr);
   std::string callee_name = RTN_FindNameByAddress(callee_addr);
 
+#ifdef DEBUG
+  std::cout << callee_name + " -> " + branch_name << std::endl;
+#endif
+
   if (!rtn_is_valid_transform(branch_name) &&
       !rtn_is_valid_transform(callee_name)) {
     return;
@@ -264,7 +269,7 @@ void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
   call_pair.to = branch_name;
   call_pair.from = callee_name;
   dde_state.to_instrument = false;
-
+#ifndef DEBUG
   // TODO: this is dangerous, what if nullopt
   Intrinsic intr = get_intrinsic_from_rtn_name(branch_name).value();
 
@@ -273,12 +278,17 @@ void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
       intr.intrinsic_call(n->value), 1, new node *[] { n }, intr.transf);
 
   reg::insert_node(REG_XMM0, y);
+#endif
 }
 
 void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
 
   std::string branch_name = RTN_FindNameByAddress(branch_addr);
   std::string callee_name = RTN_FindNameByAddress(callee_addr);
+
+#ifdef DEBUG
+  std::cout << callee_name + " -> " + branch_name << std::endl;
+#endif
 
   if (!rtn_is_valid_transform(branch_name) &&
       !rtn_is_valid_transform(callee_name)) {
