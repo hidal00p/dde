@@ -42,8 +42,6 @@ void newton(double x0) {
   double eps = 10;
   do {
     // Forward step
-    // TODO:
-    // 2. Var marking after declaration.
     dde::start();
 
     dde::var("x");
