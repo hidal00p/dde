@@ -4,12 +4,19 @@
 double g(double x) { return x * x * std::cos(x); }
 
 int main() {
-  DDE_START
-  DDE_VAR("x", double x = 2.0)
-  DDE_OUTPUT("y", double y = 0.0)
-  y = g(x) * std::sin(x);
-  DDE_DUMP_GRAPH
-  DDE_STOP
+  dde::start();
+
+  dde::var("x");
+  double x = 2.0;
+  dde::endvar();
+
+  dde::var("y", true);
+  double y = 0;
+  dde::endvar();
+
+  y = g(x);
+  dde::stop();
+  dde::dump_graph();
 
   return 0;
 }

@@ -11,4 +11,4 @@ all: $(TARGETS)
 	g++ $(CPP_FLAGS) -c $<
 
 clean:
-	rm -rf *.exe
+	rm -rf *.exe *.ds

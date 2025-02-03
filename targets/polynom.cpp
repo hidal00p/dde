@@ -43,16 +43,23 @@ void newton(double x0) {
   do {
     // Forward step
     // TODO:
-    // 1. Function calls look less magical than macros
     // 2. Var marking after declaration.
-    DDE_START
-    DDE_VAR("x", double x = x0)
-    DDE_OUTPUT("f_x", double f_x = 0)
+    dde::start();
+
+    dde::var("x");
+    double x = x0;
+    dde::endvar();
+
+    dde::var("f_x", true);
+    double f_x = 0;
+    dde::endvar();
+
     f_x = lib::f(x);
-    DDE_STOP
+    dde::stop();
 
     // Newton update
-    DDE_DUMP_GRAPH
+    dde::dump_graph();
+
     Graph gr(GRAPH_PATH);
     gr.backprop();
     double df_dx = gr.parsed["x"]->der;

@@ -154,21 +154,36 @@ void stop_marking() {
 VOID routine(RTN rtn, VOID *v) {
   std::string rtn_name = RTN_Name(rtn);
 
-  if (rtn_name.find("__dde_start") != std::string::npos) {
+  bool dde_namespace = rtn_name.find("dde") != std::string::npos;
+  if (!dde_namespace)
+    return;
+
+  bool dde_start = rtn_name.find("start") != std::string::npos;
+  if (dde_start) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)start_instr, IARG_END);
     RTN_Close(rtn);
     return;
   }
 
-  if (rtn_name.find("__dde_stop") != std::string::npos) {
+  bool dde_stop = rtn_name.find("stop") != std::string::npos;
+  if (dde_stop) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_instr, IARG_END);
     RTN_Close(rtn);
     return;
   }
 
-  if (rtn_name.find("__dde_mark_start") != std::string::npos) {
+  bool dde_endvar = rtn_name.find("endvar") != std::string::npos;
+  if (dde_endvar) {
+    RTN_Open(rtn);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_marking, IARG_END);
+    RTN_Close(rtn);
+    return;
+  }
+
+  bool dde_var = rtn_name.find("var") != std::string::npos;
+  if (dde_var) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)start_marking,
                    IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
@@ -177,14 +192,8 @@ VOID routine(RTN rtn, VOID *v) {
     return;
   }
 
-  if (rtn_name.find("__dde_mark_stop") != std::string::npos) {
-    RTN_Open(rtn);
-    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_marking, IARG_END);
-    RTN_Close(rtn);
-    return;
-  }
-
-  if (rtn_name.find("__dde_dump_graph") != std::string::npos) {
+  bool dde_dump_graph = rtn_name.find("dump_graph") != std::string::npos;
+  if (dde_dump_graph) {
     RTN_Open(rtn);
     RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)dump_graph, IARG_END);
     RTN_Close(rtn);
@@ -200,7 +209,27 @@ VOID routine(RTN rtn, VOID *v) {
 
 #define NDEBUG
 namespace test {
-void instruction(INS ins, void *v) {}
+void image(IMG img, void *v) {
+  bool libm = IMG_Name(img).find("libm") != std::string::npos;
+  if (!IMG_IsMainExecutable(img) && !libm)
+    return;
+
+  for (SYM s = IMG_RegsymHead(img); SYM_Valid(s); s = SYM_Next(s)) {
+    std::cout << SYM_Name(s) << std::endl;
+  }
+}
+
+void instruction(INS ins, void *v) {
+  if (INS_IsRet(ins)) {
+    instrumentation::handle_ret(ins);
+    return;
+  }
+
+  if (INS_IsCall(ins)) {
+    instrumentation::handle_call(ins);
+    return;
+  }
+}
 } // namespace test
 
 int main(int argc, char *argv[]) {
@@ -214,13 +243,12 @@ int main(int argc, char *argv[]) {
   IMG_AddInstrumentFunction(image, 0);
   RTN_AddInstrumentFunction(routine, 0);
   INS_AddInstrumentFunction(instruction, 0);
-
   // Final graph processing
   PIN_AddFiniFunction(final_processing, 0);
 #else
-  IMG_AddInstrumentFunction(image, 0);
-  RTN_AddInstrumentFunction(routine, 0);
-  INS_AddInstrumentFunction(test::instruction, 0);
+  IMG_AddInstrumentFunction(test::image, 0);
+  // RTN_AddInstrumentFunction(routine, 0);
+  // INS_AddInstrumentFunction(test::instruction, 0);
   PIN_AddFiniFunction(final_processing, 0);
 #endif
 
