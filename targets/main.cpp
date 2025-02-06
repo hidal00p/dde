@@ -9,26 +9,26 @@
 #include <string>
 #include <vector>
 
-std::vector<ts::CheckPoint> cps;
+std::vector<ts::RuntimeStats> stats;
 
 void newton(double);
 
 int main() {
-  std::vector<double> guesses = {-4.0, -2.0, 4.12};
+  std::vector<double> guesses = {-4.0, -2.0, 0.25, 1.25, 4.12, 6.0, 10.0};
 
   for (double &x0 : guesses) {
     newton(x0);
+  }
 
-    for (int i = 0; i < cps.size(); i += 5) {
-      cps[i].show();
-      cps[i + 1].show();
-      cps[i + 2].show();
-      cps[i + 3].show();
-      cps[i + 4].show();
-      std::cout << std::endl;
+  std::cout << "Stats:" << std::endl;
+  std::cout << "Instrumentation Graph" << std::endl;
+  for (auto &stat : stats) {
+    std::string stat_str = "";
+    for (auto &cp : stat.cps) {
+      ts::TimeDiff dt = cp.toc - cp.tic;
+      stat_str += std::to_string(dt.count()) + " ";
     }
-
-    cps.clear();
+    std::cout << stat_str << std::endl;
   }
 
   return 0;
@@ -47,13 +47,9 @@ void newton(double x0) {
     // Forward step
 
     std::string str_i = std::to_string(i + 1);
-    ts::CheckPoint iter("iter_" + str_i);
     ts::CheckPoint inst("inst_" + str_i);
-    ts::CheckPoint gdump("gdump_" + str_i);
     ts::CheckPoint graph("graph_" + str_i);
-    ts::CheckPoint bp("bp_" + str_i);
 
-    iter.tic = ts::clock::now();
     inst.tic = ts::clock::now();
     dde::start();
 
@@ -70,29 +66,21 @@ void newton(double x0) {
     inst.toc = ts::clock::now();
 
     // Newton update
-    gdump.tic = ts::clock::now();
     dde::dump_graph();
-    gdump.toc = ts::clock::now();
 
     graph.tic = ts::clock::now();
     Graph gr(GRAPH_PATH);
-    graph.toc = ts::clock::now();
 
-    bp.tic = ts::clock::now();
     gr.backprop();
-    bp.toc = ts::clock::now();
+    graph.toc = ts::clock::now();
 
     double df_dx = gr.parsed["x"]->der;
 
     x0 = x - f_x / df_dx;
     eps = std::abs(f_x);
-    iter.toc = ts::clock::now();
 
-    cps.push_back(inst);
-    cps.push_back(gdump);
-    cps.push_back(graph);
-    cps.push_back(bp);
-    cps.push_back(iter);
+    ts::RuntimeStats stat = {.tag = str_i, .cps = {inst, graph}};
+    stats.push_back(stat);
 
   } while (++i < MAX_ITER && eps > TOL);
 

@@ -1,10 +1,10 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
+#include <fstream>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
-#include <fstream>
 
 #define NOP "\0"
 

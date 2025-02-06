@@ -6,4 +6,3 @@ double f(double x);
 }
 
 #endif
-
