@@ -8,8 +8,6 @@
 #include <cmath>
 #include <iostream>
 
-bool prev_to_instrument;
-
 VOID instruction(INS ins, VOID *v) {
   if (INS_IsRet(ins) && !call_pair.empty()) {
     instrumentation::handle_ret(ins);
