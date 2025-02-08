@@ -1,19 +1,17 @@
-SRC_INCLUDE = ../src
+INT_TESTS = test_overhead.exe
+INCLUDE_FLAGS = -I"../lib/dde/include" -I"../lib/utils/include"
+CPP_FLAGS = -std=c++17 -fno-plt -mfpmath=387 $(INCLUDE_FLAGS)
+LIB_FLAGS = -L"../lib/utils" -lmytime
 
-TEST_STACK_SRC = test_stack.cpp ../src/graph_utils.cpp
-TEST_STACK_H = ../src/graph_utils.h
+int_test: $(INT_TESTS)
 
-test_stack.exe: $(TEST_STACK_SRC) $(TEST_STACK_H) 
-	@g++ -I$(SRC_INCLUDE) -o $@ $(TEST_STACK_SRC)
-
-test_%.exe: %.o test_%.cpp
-	g++ -o $@ $^
-
-%.o: %.cpp
-	g++ -c $^
+%.exe: integration/%.cpp
+	g++ $(CPP_FLAGS) $^ $(LIB_FLAGS) -o $@
 
 clean:
-	rm -rf *.o *.exe
+	rm -rf integration/*.o *.exe
 
-.PHONY: clean
-.PRECIOUS: %.o %.exe
+format:
+	clang-format -i integration/*.cpp
+
+.PHONY: clean format

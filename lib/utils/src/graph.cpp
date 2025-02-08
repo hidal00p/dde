@@ -1,4 +1,3 @@
-#include "graph.h"
 #include <cassert>
 #include <cmath>
 #include <fstream>
@@ -6,6 +5,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "graph.h"
 
 #define NOP "\0"
 

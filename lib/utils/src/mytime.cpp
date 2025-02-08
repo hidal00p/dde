@@ -1,4 +1,4 @@
-#include "time.h"
+#include "mytime.h"
 #include <iomanip>
 #include <iostream>
 
@@ -10,11 +10,12 @@ void log_time(TimeDiff dt) {
 
 void CheckPoint::show() {
   TimeDiff dt = toc - tic;
-
-  std::cout << std::setprecision(6) << dt.count();
-  std::cout << " ms" << std::endl;
-  std::cout << DELIM << std::endl;
+  std::cout << std::fixed << dt.count() << std::endl;
 }
 
-void RuntimeStats::show() { std::cout << tag << std::endl; }
+void RuntimeStats::show() {
+  std::cout << tag << std::endl;
+  for (auto &cp : cps)
+    cp.show();
+}
 } // namespace ts

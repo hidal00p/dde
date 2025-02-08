@@ -1,13 +1,13 @@
-#include "../lib/dde.h"
-#include "graph.h"
-#include "mylib.h"
-#include "time.h"
-
 #include <cassert>
 #include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include "dde.h"
+#include "graph.h"
+#include "mylib.h"
+#include "mytime.h"
 
 std::vector<ts::RuntimeStats> stats;
 
