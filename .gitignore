@@ -12,6 +12,7 @@ compile_commands.json
 # DDE execution artifacts
 */prog.gr
 */prog.der
+stats.log
 
 # Clang stuff
 .cache/

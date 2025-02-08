@@ -18,28 +18,29 @@ def print_stats(data: np.ndarray):
     )
 
 
+def is_float(line: str) -> bool:
+    try:
+        float(line)
+        return True
+    except:
+        return False
+
+
 def analyze(stats_path: pl.Path):
     with open(stats_path) as s_file:
-        while s_file.readline() != "Stats:\n":
-            pass
-
-        s_file.readline()
-
-        inst_data, graph_data = [], []
+        data = {}
+        func = None
         while line := s_file.readline():
-            inst, graph = map(lambda x: float(x), line.strip().split(" "))
-            inst_data.append(inst)
-            graph_data.append(graph)
+            if not is_float(line):
+                func = line.strip()
+                data[func] = []
+                continue
+            data[func].append(float(line))
 
-        inst_data = np.array(inst_data)
-        graph_data = np.array(graph_data)
-
-        print("Instrumentation: ")
-        print_stats(inst_data)
-        print()
-
-        print(f"Graph parsing:")
-        print_stats(graph_data)
+        for key, val in data.items():
+            val = np.array(val)
+            print(key)
+            print_stats(val)
 
 
 if __name__ == "__main__":
