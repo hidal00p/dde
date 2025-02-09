@@ -62,6 +62,7 @@ bool is_visited(std::string uuid, uuid_list visited) {
   return std::find(visited.begin(), visited.end(), uuid) != visited.end();
 }
 
+std::string graph_path = "/tmp/prog.gr";
 std::ofstream graph_file;
 
 void show_node(node *n, std::string prefix, uuid_list &visited) {
@@ -90,7 +91,7 @@ void show_node(node *n, std::string prefix, uuid_list &visited) {
 }
 
 void show_mem_map() {
-  graph_file.open("/home/hidaloop/.folder/random/pinenv/dde/scripts/prog.gr");
+  graph_file.open(graph_path);
   uuid_list visited;
   for (const auto &[addr, n] : mem_map) {
     if (n->operands == nullptr || !n->output || is_visited(n->uuid, visited))

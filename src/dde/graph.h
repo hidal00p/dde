@@ -58,6 +58,7 @@ node *top();
 uint8_t size();
 } // namespace stack
 
+extern std::string graph_path;
 typedef std::vector<std::string> uuid_list;
 void show_node(node *n);
 void show_mem_map();

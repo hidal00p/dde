@@ -14,9 +14,9 @@ format:
 	@clang-format -i $(SRC_DIR)/*.cpp \
 		$(SRC_DIR)/dde/*.h $(SRC_DIR)/dde/*.cpp \
 		$(TARGETS_DIR)/*.cpp \
-		tests/*.cpp \
+		tests/integration/*.cpp \
 		$(TARGETS_DIR)/*.h \
-		$(LIB_DIR)/*.h \
+		$(LIB_DIR)/dde/include/*.h \
 		&& echo "Formatted C++ project"
 	@black scripts/*.py
 
