@@ -205,30 +205,20 @@ VOID routine(RTN rtn, VOID *v) {
 /*   argc, argv are the entire command line: pin -t <toolname> -- ...    */
 /* ===================================================================== */
 
-#define NDEBUG
-namespace test {
-void image(IMG img, void *v) {
-  bool libm = IMG_Name(img).find("libm") != std::string::npos;
-  if (!IMG_IsMainExecutable(img) && !libm)
-    return;
+bool parse_args(int argc, char *argv[]) {
+  constexpr uint8_t pin_reserved_args = 7;
 
-  for (SYM s = IMG_RegsymHead(img); SYM_Valid(s); s = SYM_Next(s)) {
-    std::cout << SYM_Name(s) << std::endl;
-  }
+  if (argc == pin_reserved_args)
+    return false;
+
+  if (argc > pin_reserved_args + 1)
+    return true;
+
+  std::string arg_path(argv[pin_reserved_args]);
+  graph_path = arg_path;
+
+  return false;
 }
-
-void instruction(INS ins, void *v) {
-  if (INS_IsRet(ins)) {
-    instrumentation::handle_ret(ins);
-    return;
-  }
-
-  if (INS_IsCall(ins)) {
-    instrumentation::handle_call(ins);
-    return;
-  }
-}
-} // namespace test
 
 int main(int argc, char *argv[]) {
   // Initialize pin and symbols
@@ -236,19 +226,15 @@ int main(int argc, char *argv[]) {
   if (PIN_Init(argc, argv))
     return usage();
 
-#ifndef DEBUG
+  if (parse_args(argc, argv))
+    return usage();
+
   // Register Instruction to be called to instrument instructions
   IMG_AddInstrumentFunction(image, 0);
   RTN_AddInstrumentFunction(routine, 0);
   INS_AddInstrumentFunction(instruction, 0);
   // Final graph processing
   PIN_AddFiniFunction(final_processing, 0);
-#else
-  IMG_AddInstrumentFunction(test::image, 0);
-  // RTN_AddInstrumentFunction(routine, 0);
-  // INS_AddInstrumentFunction(test::instruction, 0);
-  PIN_AddFiniFunction(final_processing, 0);
-#endif
 
   // Start the program, never returns
   PIN_StartProgram();
