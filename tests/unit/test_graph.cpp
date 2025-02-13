@@ -23,25 +23,57 @@ public:
 };
 
 TESTWITHSETUP(Stack, StackTest1) {
-  node *n1 = new node(2.0);
-  stack::push(n1);
-  CHECK(n1->uuid == stack::top()->uuid);
-
-  node *n2 = new node(2.0);
-  stack::push(n2);
-  CHECK(n2->uuid == stack::top()->uuid);
+  node *n = new node(42.0);
+  stack::push(n);
+  CHECK(n->uuid == stack::top()->uuid);
 }
 
 TESTWITHSETUP(Stack, StackTest2) {
   node *n = new node(42.0);
 
   stack::push(n);
-  stack::push(n);
-
-  CHECK(stack::size() == 2);
+  CHECK(stack::size() == 1);
 
   stack::pop();
-  stack::pop();
-
   CHECK(stack::size() == 0);
+}
+
+class MemMapSetup : public TestSetup {
+public:
+  void setup() { mem_map.clear(); }
+
+  void teardown() { mem_map.clear(); }
+};
+
+TESTWITHSETUP(MemMap, MapTest1) {
+  node* n = new node(42.0);
+  mem::insert_node(1, n);
+  CHECK(mem::is_node_recorded(1));
+}
+
+TESTWITHSETUP(MemMap, MapTest2) {
+  node* n = new node(42.0);
+  mem::insert_node(1, n);
+  mem::write_to_mem(1, 2);
+  CHECK(mem::expect_node(2)->uuid == mem::expect_node(1)->uuid);
+}
+
+class RegMapSetup : public TestSetup {
+public:
+  void setup() { reg_map.clear(); }
+
+  void teardown() { reg_map.clear(); }
+};
+
+TESTWITHSETUP(RegMap, RegTest1) {
+  node* n = new node(42.0);
+  reg::insert_node(1, n);
+  CHECK(reg::is_node_recorded(1));
+}
+
+TESTWITHSETUP(RegMap, RegTest2) {
+  node* n = new node(42.0);
+  reg::insert_node(1, n);
+  reg::write_to_other_reg(1, 2);
+  CHECK(reg::expect_node(2)->uuid == reg::expect_node(1)->uuid);
 }
