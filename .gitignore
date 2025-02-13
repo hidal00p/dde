@@ -3,8 +3,9 @@ compile_commands.json
 
 # Compilation artifacts
 */obj-*
-*/*.o
-*/*.exe
+*.o
+*.to
+*.exe
 
 # Disassembly artifcats
 *.ds
