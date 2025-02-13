@@ -1,7 +1,7 @@
 #include "params.h"
 #include <cmath>
 
-bool DataRegion::within_range(ADDRINT ea) {
+bool DataRegion::within_range(uint64_t ea) {
   return ea >= this->start && ea <= this->end;
 }
 

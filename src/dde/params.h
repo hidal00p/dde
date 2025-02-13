@@ -2,7 +2,6 @@
 #define DDE_PARAMS_H
 
 #include "graph.h"
-#include "pin.H"
 #include <map>
 #include <optional>
 
@@ -10,7 +9,7 @@ struct DataRegion {
   uint64_t start;
   uint64_t end;
 
-  bool within_range(ADDRINT ea);
+  bool within_range(uint64_t ea);
 };
 
 struct Sections {

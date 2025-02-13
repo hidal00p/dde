@@ -18,8 +18,6 @@ enum transformation { NONE, MUL, ADD, DIV, SUB, CHS, SIN, COS };
 
 std::string get_uuid();
 
-struct node;
-
 struct node {
   std::string uuid;
   bool is_active = true;
