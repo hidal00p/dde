@@ -14,4 +14,4 @@ jobs:
     - name: Build tests
       run: make tests
     - name: Run tests
-      run: ./tests/unit/test_all
+      run: ./tests/unit/test_all.exe

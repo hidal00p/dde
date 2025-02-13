@@ -3,20 +3,20 @@ compile_commands.json
 
 # Compilation artifacts
 */obj-*
-*.o
-*.to
-*.exe
+**/*.o
+**/*.to
+**/*.exe
 
 # Disassembly artifcats
 *.ds
 
 # DDE execution artifacts
-*/prog.gr
-*/prog.der
-stats.log
+**/prog.gr
+**/prog.der
+**/stats.log
 
 # Clang stuff
-.cache/
+**/.cache/
 
 # Pin tool execution artifacts
 *.out

@@ -1,15 +1,13 @@
-UNIT_TESTS = test_graph.to
+UNIT_TESTS := test_graph.to
 
-DDE_DIR = ../../src/dde
-DDE_DEPS = graph.o
+DDE_DIR := ../../src/dde
+DDE_DEPS := graph.o
 
-INCLUDE_FLAGS = -I"../../lib" -I"$(DDE_DIR)"
-CPP_FLAGS = -std=c++17 $(INCLUDE_FLAGS)
-LIB_FLAGS = -L"../../lib/cppunitlite" -lcppunitlite
+INCLUDE_FLAGS := -I"../../lib" -I"$(DDE_DIR)"
+CPP_FLAGS := -std=c++17 $(INCLUDE_FLAGS)
+LIB_FLAGS := -L"../../lib/cppunitlite" -lcppunitlite
 
-
-
-test_all: test_all.cpp $(UNIT_TESTS) $(DDE_DEPS)
+test_all.exe: test_all.cpp $(UNIT_TESTS) $(DDE_DEPS)
 	g++ $(CPP_FLAGS) $^ $(LIB_FLAGS) -o $@
 
 %.to: %.cpp
