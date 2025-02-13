@@ -1,0 +1,17 @@
+name: DDE Pin Tool CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build tests
+      run: make tests
+    - name: Run tests
+      run: ./tests/unit/test_all
