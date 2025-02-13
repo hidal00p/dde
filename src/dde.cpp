@@ -233,7 +233,6 @@ int main(int argc, char *argv[]) {
   IMG_AddInstrumentFunction(image, 0);
   RTN_AddInstrumentFunction(routine, 0);
   INS_AddInstrumentFunction(instruction, 0);
-  // Final graph processing
   PIN_AddFiniFunction(final_processing, 0);
 
   // Start the program, never returns
