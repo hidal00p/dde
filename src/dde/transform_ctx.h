@@ -28,6 +28,4 @@ struct ctx {
   INS ins;
 };
 } // namespace binary_op
-
-void show_operand(CONTEXT *ctx, OprType t, operand opr);
 #endif

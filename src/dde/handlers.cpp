@@ -310,9 +310,6 @@ binary_op::ctx *get_bop_operands(INS ins) {
 
   if (INS_OperandIsMemory(ins, DEST_IDX)) {
     bop_ctx->dest = {
-        .origin = {.mem = {INS_OperandMemoryBaseReg(ins, DEST_IDX),
-                           (int8_t)INS_OperandMemoryDisplacement(ins,
-                                                                 DEST_IDX)}},
         .type = OprType::MEM,
     };
   } else if (INS_OperandIsReg(ins, DEST_IDX)) {
@@ -329,10 +326,7 @@ binary_op::ctx *get_bop_operands(INS ins) {
     bop_ctx->src = {.origin = {.reg = INS_OperandReg(ins, SRC_IDX)},
                     .type = OprType::REGSTR};
   } else if (INS_OperandIsMemory(ins, SRC_IDX)) {
-    bop_ctx->src = {.origin = {.mem = {INS_OperandMemoryBaseReg(ins, SRC_IDX),
-                                       (int8_t)INS_OperandMemoryDisplacement(
-                                           ins, SRC_IDX)}},
-                    .type = OprType::MEM};
+    bop_ctx->src = {.type = OprType::MEM};
   } else {
     assert(false);
   }
