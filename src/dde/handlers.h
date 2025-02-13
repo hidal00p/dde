@@ -4,20 +4,19 @@
 #include "transform_ctx.h"
 
 namespace analysis {
-void track_fpu_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, bool is_pop,
-                   ADDRINT ea);
+void track_fpu_mov(binary_op::ctx *mov_ctx, bool is_pop, ADDRINT ea);
 
-void track_reg_mov(CONTEXT *ctx, binary_op::ctx *mov_ctx, ADDRINT ea);
+void track_reg_mov(binary_op::ctx *mov_ctx, ADDRINT ea);
 
-void track_add(CONTEXT *ctx, binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea);
+void track_add(binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea);
 
-void track_mul(CONTEXT *ctx, binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea);
+void track_mul(binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea);
 
-void track_div(CONTEXT *ctx, binary_op::ctx *div_ctx, bool is_pop,
-               bool is_reverse, ADDRINT ea);
+void track_div(binary_op::ctx *div_ctx, bool is_pop, bool is_reverse,
+               ADDRINT ea);
 
-void track_sub(CONTEXT *ctx, binary_op::ctx *sub_ctx, bool is_pop,
-               bool is_reverse, ADDRINT ea);
+void track_sub(binary_op::ctx *sub_ctx, bool is_pop, bool is_reverse,
+               ADDRINT ea);
 
 void track_sch();
 
