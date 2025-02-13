@@ -1,14 +1,21 @@
 TARGETS_DIR := targets
 SRC_DIR := src
 LIB_DIR := lib
+TESTS_DIR := tests
 
-all: tools targets
+all: tools targets libs tests
 
 tools:
 	$(MAKE) -C $(SRC_DIR) tools
 
 targets:
 	$(MAKE) -C $(TARGETS_DIR)
+
+tests: libs
+	$(MAKE) -C $(TESTS_DIR) unit
+
+libs:
+	$(MAKE) -C $(LIB_DIR)/cppunitlite
 
 format:
 	@clang-format -i $(SRC_DIR)/*.cpp \
@@ -23,10 +30,8 @@ format:
 
 clean:
 	rm -rf *.out
-	$(MAKE) -C $(SRC_DIR)/ clean
-	$(MAKE) clean-targets
-
-clean-targets:
-	$(MAKE) -C $(TARGETS_DIR)/ clean
+	$(MAKE) -C $(SRC_DIR) clean
+	$(MAKE) -C $(TARGETS_DIR) clean
+	$(MAKE) -C $(TESTS_DIR) clean
 
 .PHONY: clean-targets format targets tools
