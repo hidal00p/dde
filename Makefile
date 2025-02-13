@@ -17,6 +17,7 @@ format:
 		tests/integration/*.cpp \
 		$(TARGETS_DIR)/*.h \
 		$(LIB_DIR)/dde/include/*.h \
+		$(LIB_DIR)/cppunitlite/*.h $(LIB_DIR)/cppunitlite/*.cpp \
 		&& echo "Formatted C++ project"
 	@black scripts/*.py
 

@@ -1,17 +1,20 @@
-INT_TESTS = test_overhead.exe
-INCLUDE_FLAGS = -I"../lib/dde/include" -I"../lib/utils/include"
-CPP_FLAGS = -std=c++17 -fno-plt -mfpmath=387 $(INCLUDE_FLAGS)
-LIB_FLAGS = -L"../lib/utils" -lmytime
+INTEGRATION_DIR = ./integration
+UNIT_DIR = ./unit
 
-int_test: $(INT_TESTS)
+all: integration unit
 
-%.exe: integration/%.cpp
-	g++ $(CPP_FLAGS) $^ $(LIB_FLAGS) -o $@
+unit: 
+	make -C $(UNIT_DIR)
+
+integration: $(INT_TESTS)
+	make -C $(INTEGRATION_DIR)
 
 clean:
-	rm -rf integration/*.o *.exe
+	make -C $(INTEGRATION_DIR) clean
+	make -C $(UNIT_DIR) clean
 
 format:
-	clang-format -i integration/*.cpp
+	make -C $(INTEGRATION_DIR) format
+	make -C $(UNIT_DIR) format
 
-.PHONY: clean format
+.PHONY: clean format all unit integration
