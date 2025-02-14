@@ -5,8 +5,7 @@
 #define TIME_DDE(name, func, iter)                                             \
   {                                                                            \
     ts::RuntimeStats rs;                                                       \
-    rs.tag = name;                                                             \
-    rs.tag += "_dde";                                                          \
+    rs.tag = name + std::string(" dde");                                       \
     for (int i = 0; i < iter; i++) {                                           \
       ts::CheckPoint cp("");                                                   \
       cp.tic = ts::clock::now();                                               \
@@ -84,27 +83,28 @@ void compound_sa() {
 
 int main() {
   int max_iter = 10000;
+  int raw_factor = 1;
 
-  TIME("mul", product, max_iter)
+  TIME("mul", product, max_iter * raw_factor)
   TIME_DDE("mul", product, max_iter)
 
-  TIME("add", addition, max_iter)
+  TIME("add", addition, max_iter * raw_factor)
   TIME_DDE("add", addition, max_iter)
 
-  TIME("sub", subtract, max_iter)
+  TIME("sub", subtract, max_iter * raw_factor)
   TIME_DDE("sub", subtract, max_iter)
 
-  TIME("div", divide, max_iter)
+  TIME("div", divide, max_iter * raw_factor)
   TIME_DDE("div", divide, max_iter)
 
-  TIME("sin", intrinsic_call, max_iter)
+  TIME("sin", intrinsic_call, max_iter * raw_factor)
   TIME_DDE("sin", intrinsic_call, max_iter)
 
-  TIME("compound", compound, max_iter)
+  TIME("compound", compound, max_iter * raw_factor)
   TIME_DDE("compound", compound, max_iter)
 
-  TIME("compound_sa", compound_sa, max_iter)
-  TIME_DDE("compound_sa", compound_sa, max_iter)
+  TIME("compound sa", compound_sa, max_iter * raw_factor)
+  TIME_DDE("compound sa", compound_sa, max_iter)
 
   return 0;
 }

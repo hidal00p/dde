@@ -1,21 +1,17 @@
 import numpy as np
 import pathlib as pl
 
+from tabulate import tabulate
 
-def print_stats(data: np.ndarray):
-    print(
-        "Max: {:.6} ms\n"
-        "Min: {:.6} ms\n"
-        "Mean: {:.6} ms\n"
-        "Total: {:.6} ms\n"
-        "Worst portion: {}%".format(
-            np.max(data),
-            np.min(data),
-            np.mean(data),
-            np.sum(data),
-            np.round(np.max(data) / np.sum(data) * 100, 2),
-        )
+
+def extract_stats(data: np.ndarray):
+    max_val, min_val, mean_val, sum_val = (
+        np.max(data),
+        np.min(data),
+        np.mean(data),
+        np.sum(data),
     )
+    return [max_val, min_val, mean_val, sum_val, np.round(max_val / sum_val * 100, 2)]
 
 
 def is_float(line: str) -> bool:
@@ -27,8 +23,8 @@ def is_float(line: str) -> bool:
 
 
 def analyze(stats_path: pl.Path):
+    data = {}
     with open(stats_path) as s_file:
-        data = {}
         func = None
         while line := s_file.readline():
             if not is_float(line):
@@ -37,10 +33,24 @@ def analyze(stats_path: pl.Path):
                 continue
             data[func].append(float(line))
 
-        for key, val in data.items():
-            val = np.array(val)
-            print(key)
-            print_stats(val)
+    table = []
+    for key, val in data.items():
+        stats = extract_stats(np.array(val))
+        table.append([key] + stats)
+
+    print(
+        tabulate(
+            table,
+            headers=[
+                "Test",
+                "Max [ms]",
+                "Min [ms]",
+                "Mean [ms]",
+                "Total [ms]",
+                "Latency of first run [%]",
+            ],
+        )
+    )
 
 
 if __name__ == "__main__":
