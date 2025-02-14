@@ -1,5 +1,7 @@
 # dde - dynamic DAG extractor
 
+![DAG by DALLE](.github/dalle-dag.png)
+
 `dde` is a tool based on Intel Pin, which attempts to extract a DAG representation
 of an executabe.
 
