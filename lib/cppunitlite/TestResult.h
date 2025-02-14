@@ -1,7 +1,7 @@
-
-
 #ifndef TESTRESULT_H
 #define TESTRESULT_H
+
+#include "Success.h"
 
 #include <time.h>
 
@@ -14,8 +14,9 @@ public:
 
   virtual void testWasRun();
   virtual void startTests();
-  virtual void addFailure(const Failure &failure);
   virtual void endTests();
+  virtual void addFailure(const Failure &failure);
+  virtual void addSuccess(const Success &suc);
 
   int getFailureCount() const { return failureCount; }
 

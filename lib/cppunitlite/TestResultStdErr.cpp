@@ -2,9 +2,13 @@
 #include "Failure.h"
 #include <iostream>
 
+void TestResultStdErr::addSuccess(const Success &success) {
+  std::cerr << "[V] " << success.serialize() << std::endl;
+}
+
 void TestResultStdErr::addFailure(const Failure &failure) {
   TestResult::addFailure(failure);
-  std::cerr << failure << std::endl;
+  std::cerr << "[X] " << failure.serialize() << std::endl;
 }
 
 void TestResultStdErr::endTests() {

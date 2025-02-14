@@ -1,5 +1,3 @@
-
-
 #include "Test.h"
 #include "Failure.h"
 #include "TestRegistry.h"
@@ -15,6 +13,7 @@ void Test::run(TestResult &result) {
 #endif
     setup();
     runTest(result);
+    result.addSuccess(Success(name));
 #ifndef DONT_CATCH_EXCEPTIONS
   } catch (...) {
     result.addFailure(Failure("Unhandled exception", name, "", 0));

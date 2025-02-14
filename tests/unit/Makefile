@@ -4,7 +4,7 @@ DDE_DIR := ../../src/dde
 DDE_DEPS := graph.o
 
 INCLUDE_FLAGS := -I"../../lib" -I"$(DDE_DIR)"
-CPP_FLAGS := -std=c++17 $(INCLUDE_FLAGS)
+CPP_FLAGS := -std=c++17 -g $(INCLUDE_FLAGS)
 LIB_FLAGS := -L"../../lib/cppunitlite" -lcppunitlite
 
 test_all.exe: test_all.cpp $(UNIT_TESTS) $(DDE_DEPS)

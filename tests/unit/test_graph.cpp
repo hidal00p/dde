@@ -46,13 +46,13 @@ public:
 };
 
 TESTWITHSETUP(MemMap, MapTest1) {
-  node* n = new node(42.0);
+  node *n = new node(42.0);
   mem::insert_node(1, n);
   CHECK(mem::is_node_recorded(1));
 }
 
 TESTWITHSETUP(MemMap, MapTest2) {
-  node* n = new node(42.0);
+  node *n = new node(42.0);
   mem::insert_node(1, n);
   mem::write_to_mem(1, 2);
   CHECK(mem::expect_node(2)->uuid == mem::expect_node(1)->uuid);
@@ -66,13 +66,13 @@ public:
 };
 
 TESTWITHSETUP(RegMap, RegTest1) {
-  node* n = new node(42.0);
+  node *n = new node(42.0);
   reg::insert_node(1, n);
   CHECK(reg::is_node_recorded(1));
 }
 
 TESTWITHSETUP(RegMap, RegTest2) {
-  node* n = new node(42.0);
+  node *n = new node(42.0);
   reg::insert_node(1, n);
   reg::write_to_other_reg(1, 2);
   CHECK(reg::expect_node(2)->uuid == reg::expect_node(1)->uuid);

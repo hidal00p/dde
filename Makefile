@@ -33,5 +33,6 @@ clean:
 	$(MAKE) -C $(SRC_DIR) clean
 	$(MAKE) -C $(TARGETS_DIR) clean
 	$(MAKE) -C $(TESTS_DIR) clean
+	$(MAKE) -C $(LIB_DIR)/cppunitlite clean
 
 .PHONY: clean-targets format targets tools

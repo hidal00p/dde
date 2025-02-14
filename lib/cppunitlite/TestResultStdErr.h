@@ -1,12 +1,14 @@
 #ifndef TESTRESULTSTDERR_H
 #define TESTRESULTSTDERR_H
 
+#include "Success.h"
 #include "TestResult.h"
 
 class TestResultStdErr : public TestResult {
 public:
-  virtual void addFailure(const Failure &failure);
-  virtual void endTests();
+  void addFailure(const Failure &failure);
+  void addSuccess(const Success &suc);
+  void endTests();
 };
 
 #endif

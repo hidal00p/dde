@@ -1,5 +1,3 @@
-
-
 #ifndef FAILURE_H
 #define FAILURE_H
 
@@ -18,17 +16,12 @@ public:
       : condition(theCondition), testName(theTestName), fileName(theFileName),
         lineNumber(theLineNumber) {}
 
+  std::string serialize() const;
+
   std::string condition;
   std::string testName;
   std::string fileName;
   long lineNumber;
 };
-
-inline std::ostream &operator<<(std::ostream &stream, const Failure &failure) {
-  stream << failure.fileName.c_str() << "(" << failure.lineNumber << "):"
-         << "Failure: \"" << failure.condition.c_str() << "\" " << std::endl;
-
-  return stream;
-}
 
 #endif

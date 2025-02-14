@@ -10,7 +10,8 @@ void TestResult::testWasRun() { testCount++; }
 
 void TestResult::startTests() {}
 
-void TestResult::addFailure(const Failure & /*failure*/) { failureCount++; }
+void TestResult::addFailure(const Failure &) { failureCount++; }
+void TestResult::addSuccess(const Success &){};
 
 void TestResult::endTests() {
   time_t endTime;

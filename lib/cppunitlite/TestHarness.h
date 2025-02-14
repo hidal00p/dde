@@ -1,5 +1,3 @@
-
-
 #ifndef TESTHARNESS_H
 #define TESTHARNESS_H
 
