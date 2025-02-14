@@ -303,37 +303,6 @@ void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
 } // namespace analysis
 
 namespace instrumentation {
-binary_op::ctx *get_bop_operands(INS ins) {
-  static const uint8_t SRC_IDX = 1, DEST_IDX = 0;
-  binary_op::ctx *bop_ctx = new binary_op::ctx();
-  bop_ctx->ins = ins;
-
-  if (INS_OperandIsMemory(ins, DEST_IDX)) {
-    bop_ctx->dest = {
-        .type = OprType::MEM,
-    };
-  } else if (INS_OperandIsReg(ins, DEST_IDX)) {
-    bop_ctx->dest = {.origin = {.reg = INS_OperandReg(ins, DEST_IDX)},
-                     .type = OprType::REGSTR};
-  } else {
-    assert(false);
-  }
-
-  if (INS_OperandIsImmediate(ins, SRC_IDX)) {
-    bop_ctx->src = {.origin = {.imm = INS_OperandImmediate(ins, SRC_IDX)},
-                    .type = OprType::IMM};
-  } else if (INS_OperandIsReg(ins, SRC_IDX)) {
-    bop_ctx->src = {.origin = {.reg = INS_OperandReg(ins, SRC_IDX)},
-                    .type = OprType::REGSTR};
-  } else if (INS_OperandIsMemory(ins, SRC_IDX)) {
-    bop_ctx->src = {.type = OprType::MEM};
-  } else {
-    assert(false);
-  }
-
-  return bop_ctx;
-}
-
 void handle_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
                        bool is_pop) {
 
@@ -367,7 +336,7 @@ void handle_non_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
 }
 
 void handle_reg_mov(INS ins) {
-  binary_op::ctx *mov_ctx = get_bop_operands(ins);
+  binary_op::ctx *mov_ctx = binary_op::get_bop_operands(ins);
   // We assume that there is no mem to mem IO
   if (mov_ctx->src.type == OprType::MEM)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,
@@ -394,7 +363,7 @@ void handle_reg_mov(INS ins) {
 }
 
 void handle_fpu_mov(INS ins, bool is_pop) {
-  binary_op::ctx *mov_ctx = get_bop_operands(ins);
+  binary_op::ctx *mov_ctx = binary_op::get_bop_operands(ins);
 
   // FPU-wise memory can either be written to or read from
   // at the same time, these two do not happen as a part of
@@ -429,22 +398,22 @@ void handle_fpu_const_load(INS ins, uint8_t constant) {
 }
 
 void handle_add(INS ins, bool is_pop) {
-  handle_commut_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_add,
-                    is_pop);
+  handle_commut_bop(ins, binary_op::get_bop_operands(ins),
+                    (AFUNPTR)analysis::track_add, is_pop);
 }
 
 void handle_mul(INS ins, bool is_pop) {
-  handle_commut_bop(ins, get_bop_operands(ins), (AFUNPTR)analysis::track_mul,
-                    is_pop);
+  handle_commut_bop(ins, binary_op::get_bop_operands(ins),
+                    (AFUNPTR)analysis::track_mul, is_pop);
 }
 
 void handle_div(INS ins, bool is_pop, bool is_reverse) {
-  handle_non_commut_bop(ins, get_bop_operands(ins),
+  handle_non_commut_bop(ins, binary_op::get_bop_operands(ins),
                         (AFUNPTR)analysis::track_div, is_pop, is_reverse);
 }
 
 void handle_sub(INS ins, bool is_pop, bool is_reverse) {
-  handle_non_commut_bop(ins, get_bop_operands(ins),
+  handle_non_commut_bop(ins, binary_op::get_bop_operands(ins),
                         (AFUNPTR)analysis::track_sub, is_pop, is_reverse);
 }
 

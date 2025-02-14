@@ -15,5 +15,10 @@ all: $(TARGETS)
 %.o: %.cpp %.h
 	g++ $(CPP_FLAGS) -c $<
 
+format:
+	@clang-format -i *.cpp *.h
+
 clean:
 	rm -rf *.exe *.ds
+
+.PHONY: clean format

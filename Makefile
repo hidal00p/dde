@@ -3,36 +3,33 @@ SRC_DIR := src
 LIB_DIR := lib
 TESTS_DIR := tests
 
-all: tools targets libs tests
+all: tools targets tests
 
 tools:
-	$(MAKE) -C $(SRC_DIR) tools
+	@echo "===== Making DDE main tool ====="
+	@make -C $(SRC_DIR) tools
+	@echo
 
 targets:
-	$(MAKE) -C $(TARGETS_DIR)
+	@echo "===== Making demo target ====="
+	@make -C $(TARGETS_DIR)
+	@echo
 
-tests: libs
-	$(MAKE) -C $(TESTS_DIR) unit
-
-libs:
-	$(MAKE) -C $(LIB_DIR)/cppunitlite
+tests:
+	@echo "===== Making tests ====="
+	@make -C $(TESTS_DIR)
+	@echo 
 
 format:
-	@clang-format -i $(SRC_DIR)/*.cpp \
-		$(SRC_DIR)/dde/*.h $(SRC_DIR)/dde/*.cpp \
-		$(TARGETS_DIR)/*.cpp \
-		tests/integration/*.cpp \
-		$(TARGETS_DIR)/*.h \
-		$(LIB_DIR)/dde/include/*.h \
-		$(LIB_DIR)/cppunitlite/*.h $(LIB_DIR)/cppunitlite/*.cpp \
-		&& echo "Formatted C++ project"
+	@make -C $(SRC_DIR) format && echo "Formated dde"
+	@make -C $(TARGETS_DIR) format && echo "Formatted tests"
+	@make -C $(TESTS_DIR) format && echo "Formatted targets"
 	@black scripts/*.py
 
 clean:
+	@make -C $(SRC_DIR) clean
+	@make -C $(TARGETS_DIR) clean
+	@make -C $(TESTS_DIR) clean
 	rm -rf *.out
-	$(MAKE) -C $(SRC_DIR) clean
-	$(MAKE) -C $(TARGETS_DIR) clean
-	$(MAKE) -C $(TESTS_DIR) clean
-	$(MAKE) -C $(LIB_DIR)/cppunitlite clean
 
-.PHONY: clean-targets format targets tools
+.PHONY: clean-targets format targets tools tests

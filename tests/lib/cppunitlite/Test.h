@@ -34,12 +34,13 @@ public:
 
 protected:
   std::string name;
+  bool passed;
 };
 
 #define TEST(name)                                                             \
   class name##Test : public Test {                                             \
   public:                                                                      \
-    name##Test() : Test(#name "Test") {}                                       \
+    name##Test() : Test(#name) {}                                              \
     void setup(){};                                                            \
     void teardown(){};                                                         \
     void runTest(TestResult &result_);                                         \
@@ -49,7 +50,7 @@ protected:
 #define TESTWITHSETUP(name, fixtureClass)                                      \
   class name##Test : public Test, fixtureClass {                               \
   public:                                                                      \
-    name##Test() : Test(#name "Test") {}                                       \
+    name##Test() : Test(#name) {}                                              \
     void setup() { fixtureClass::setup(); }                                    \
     void teardown() { fixtureClass::teardown(); }                              \
     void runTest(TestResult &result_);                                         \
@@ -71,11 +72,14 @@ protected:
 
 #define CHECK(condition)                                                       \
   try {                                                                        \
-    if (!(condition))                                                          \
+    if (!(condition)) {                                                        \
       result_.addFailure(Failure(#condition, name, __FILE__, __LINE__));       \
+      passed = false;                                                           \
+    }                                                                          \
   } catch (...) {                                                              \
     result_.addFailure(                                                        \
         Failure("Unhandled exception", name, __FILE__, __LINE__));             \
+    passed = false;                                                             \
   }
 
 #define CHECK_LONGS_EQUAL(expected, actual)                                    \

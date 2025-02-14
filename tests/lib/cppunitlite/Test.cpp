@@ -5,6 +5,7 @@
 
 Test::Test(const std::string &testName) : name(testName) {
   TestRegistry::addTest(this);
+  passed = true;
 }
 
 void Test::run(TestResult &result) {
@@ -13,7 +14,8 @@ void Test::run(TestResult &result) {
 #endif
     setup();
     runTest(result);
-    result.addSuccess(Success(name));
+    if (passed)
+      result.addSuccess(Success(name));
 #ifndef DONT_CATCH_EXCEPTIONS
   } catch (...) {
     result.addFailure(Failure("Unhandled exception", name, "", 0));

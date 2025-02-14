@@ -27,5 +27,7 @@ struct ctx {
   operand dest;
   INS ins;
 };
+
+ctx *get_bop_operands(INS ins);
 } // namespace binary_op
 #endif
