@@ -3,7 +3,7 @@
 
 #include "vector"
 
-TEST(uuid_generation, GraphTest1) {
+TEST(test_uuid_generation) {
   std::vector<std::string> uuids;
 
   for (int i = 0; i < 200; i++)
@@ -22,13 +22,13 @@ public:
   void teardown() { fpu_stack.clear(); }
 };
 
-TESTWITHSETUP(Stack, StackTest1) {
+TESTWITHSETUP(test_top_of_the_stack, StackSetup) {
   node *n = new node(42.0);
   stack::push(n);
   CHECK(n->uuid == stack::top()->uuid);
 }
 
-TESTWITHSETUP(Stack, StackTest2) {
+TESTWITHSETUP(test_stack_size_after_modification, StackSetup) {
   node *n = new node(42.0);
 
   stack::push(n);
@@ -45,13 +45,13 @@ public:
   void teardown() { mem_map.clear(); }
 };
 
-TESTWITHSETUP(MemMap, MapTest1) {
+TESTWITHSETUP(test_memmap_node_insertion, MemMapSetup) {
   node *n = new node(42.0);
   mem::insert_node(1, n);
   CHECK(mem::is_node_recorded(1));
 }
 
-TESTWITHSETUP(MemMap, MapTest2) {
+TESTWITHSETUP(test_memmap_node_move_between_addresses, MemMapSetup) {
   node *n = new node(42.0);
   mem::insert_node(1, n);
   mem::write_to_mem(1, 2);
@@ -65,13 +65,13 @@ public:
   void teardown() { reg_map.clear(); }
 };
 
-TESTWITHSETUP(RegMap, RegTest1) {
+TESTWITHSETUP(test_regmap_node_insertion, RegMapSetup) {
   node *n = new node(42.0);
   reg::insert_node(1, n);
   CHECK(reg::is_node_recorded(1));
 }
 
-TESTWITHSETUP(RegMap, RegTest2) {
+TESTWITHSETUP(test_regmap_node_move_between_regs, RegMapSetup) {
   node *n = new node(42.0);
   reg::insert_node(1, n);
   reg::write_to_other_reg(1, 2);

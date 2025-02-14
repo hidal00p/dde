@@ -3,12 +3,12 @@
 #include <iostream>
 
 void TestResultStdErr::addSuccess(const Success &success) {
-  std::cerr << "[V] " << success.serialize() << std::endl;
+  std::cerr << "[V] passed: " << success.serialize() << std::endl;
 }
 
 void TestResultStdErr::addFailure(const Failure &failure) {
   TestResult::addFailure(failure);
-  std::cerr << "[X] " << failure.serialize() << std::endl;
+  std::cerr << "[X] failed: " << failure.serialize() << std::endl;
 }
 
 void TestResultStdErr::endTests() {

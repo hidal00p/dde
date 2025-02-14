@@ -36,25 +36,25 @@ protected:
   std::string name;
 };
 
-#define TEST(name, classUnderTest)                                             \
-  class classUnderTest##name##Test : public Test {                             \
+#define TEST(name)                                                             \
+  class name##Test : public Test {                                             \
   public:                                                                      \
-    classUnderTest##name##Test() : Test(#name "Test") {}                       \
+    name##Test() : Test(#name "Test") {}                                       \
     void setup(){};                                                            \
     void teardown(){};                                                         \
     void runTest(TestResult &result_);                                         \
-  } classUnderTest##name##Instance;                                            \
-  void classUnderTest##name##Test::runTest(TestResult &result_)
+  } name##Instance;                                                            \
+  void name##Test::runTest(TestResult &result_)
 
-#define TESTWITHSETUP(name, classUnderTest)                                    \
-  class classUnderTest##name##Test : public Test, name##Setup {                \
+#define TESTWITHSETUP(name, fixtureClass)                                      \
+  class name##Test : public Test, fixtureClass {                               \
   public:                                                                      \
-    classUnderTest##name##Test() : Test(#name "Test") {}                       \
-    void setup() { name##Setup::setup(); }                                     \
-    void teardown() { name##Setup::teardown(); }                               \
+    name##Test() : Test(#name "Test") {}                                       \
+    void setup() { fixtureClass::setup(); }                                    \
+    void teardown() { fixtureClass::teardown(); }                              \
     void runTest(TestResult &result_);                                         \
-  } classUnderTest##name##Instance;                                            \
-  void classUnderTest##name##Test::runTest(TestResult &result_)
+  } name##Instance;                                                            \
+  void name##Test::runTest(TestResult &result_)
 
 // Here is a collection of testing macros that can be used in the
 // bodies of tests.  CHECK tests a boolean expression and records
