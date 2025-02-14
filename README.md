@@ -1,5 +1,12 @@
 # dde - dynamic DAG extractor
 
+<div align="center">
+
+![build](https://github.com/hidal00p/dde/actions/workflows/build.yml/badge.svg)
+![test](https://github.com/hidal00p/dde/actions/workflows/test.yml/badge.svg)
+
+</div>
+
 ![DAG by DALLE](.github/dalle-dag.png)
 
 `dde` is a tool based on Intel Pin, which attempts to extract a DAG representation

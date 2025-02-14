@@ -1,4 +1,4 @@
-name: DDE Tests
+name: DDE Build
 
 on:
   push:
@@ -11,7 +11,5 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
-    - name: Build tests
-      run: make tests
-    - name: Run tests
-      run: ./tests/unit/test_all.exe
+    - name: Build dde
+      run: make tools

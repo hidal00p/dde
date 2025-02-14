@@ -1,4 +1,4 @@
-name: DDE Tests
+name: DDE Pin Tool CI
 
 on:
   push:
