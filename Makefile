@@ -7,7 +7,7 @@ all: tools targets tests
 
 tools:
 	@echo "===== Making DDE main tool ====="
-	@make -C $(SRC_DIR) tools
+	@make -C $(SRC_DIR) ddetools
 	@echo
 
 targets:

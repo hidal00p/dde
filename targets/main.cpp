@@ -14,7 +14,7 @@ bool parse_args(int argc, char *argv[]);
 void newton(double);
 
 int main() {
-  std::vector<double> guesses = {-4.0, -2.0, 0.25, 1.25, 4.12, 6.0, 10.0};
+  std::vector<double> guesses = {-4.0, -2.0, 0.25, 4.12, 6.0, 10.0};
 
   for (double &x0 : guesses)
     newton(x0);

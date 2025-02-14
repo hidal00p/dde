@@ -79,10 +79,15 @@ SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
 # Build rules
 #
 ##############################################################
+DDE_TOOL = dde$(OBJDIR)dde$(PINTOOL_SUFFIX)
+
+ddetools: dir objects $(DDE_TOOL)
 
 $(OBJDIR)%$(OBJ_SUFFIX): dde/%.cpp
 	$(CXX) $(TOOL_CXXFLAGS) $(COMP_OBJ)$@ $<
 
+$(DDE_TOOL): $(OBJDIR)dde$(OBJ_SUFFIX) $(OBJECTS)
+	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$(OBJDIR)dde$(PINTOOL_SUFFIX) $< $(OBJECTS) $(TOOL_LPATHS) $(TOOL_LIBS)
 # This section contains the build rules for all binaries that have special build rules.
 # See makefile.default.rules for the default build rules.
 
