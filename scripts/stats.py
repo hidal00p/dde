@@ -13,7 +13,7 @@ def extract_stats(data: np.ndarray):
         np.mean(data),
         np.sum(data),
     )
-    return [max_val, min_val, mean_val, sum_val, np.round(max_val / sum_val * 100, 2)]
+    return [max_val, min_val, mean_val, sum_val]
 
 
 def is_float(line: str) -> bool:
@@ -62,7 +62,6 @@ def analyze(stats_path: pl.Path):
                 "Min [ms]",
                 "Mean [ms]",
                 "Total [ms]",
-                "Latency of first run [%]",
                 "Overhead [dde / raw]",
             ],
         )
