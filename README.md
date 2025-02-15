@@ -1,6 +1,6 @@
 # dde - dynamic DAG extractor
 
-<div align="center">
+<div align="left">
 
 ![test](https://github.com/hidal00p/dde/actions/workflows/test.yml/badge.svg)
 
