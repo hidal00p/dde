@@ -113,7 +113,7 @@ TESTWITHSETUP(test_reg_node_move_between_regs, RegMapSetup) {
 TESTWITHSETUP(test_reg_access_at_invalid_register, RegMapSetup) {
   node *n = new node(42.0);
   reg::insert_node(1, n);
-  CHECK_FAILURE(reg::expect_node(1), NodeExpectedException &);
+  CHECK_FAILURE(reg::expect_node(2), NodeExpectedException &);
 }
 
 class MapSetup : public TestSetup {
