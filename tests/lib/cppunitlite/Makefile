@@ -13,5 +13,10 @@ cppunitlite: $(OBJECTS)
 %.o : %.cpp %.h
 	$(COMPILER) $(CCFLAGS) -c $<
 
+format:
+	clang-format -i *.cpp *.h
+
 clean:
 	rm -rf $(OBJECTS) libcppunitlite.a
+
+.PHONY: clean format

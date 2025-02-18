@@ -5,9 +5,10 @@ DDE_DEPS := graph.o transform_ctx.o
 
 
 INCLUDE_FLAGS := -I"../lib" -I"$(DDE_DIR)"
-CPP_FLAGS := -std=c++17 -g $(INCLUDE_FLAGS)
+CPP_FLAGS := -std=c++17 -g -DTEST_MODE -fexceptions $(INCLUDE_FLAGS)
 LIB_FLAGS := -L"../lib/cppunitlite" -lcppunitlite \
-			 -L"../lib/pinmock" -lpin
+			 -L"../lib/pinmock" -lpin \
+			 -L"../lib/testutils" -ltestutils
 TEST_INCLUDES := -I"../lib/pinmock" 
 
 test_all.exe: test_all.cpp $(UNIT_TESTS) $(DDE_DEPS)

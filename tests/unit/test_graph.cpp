@@ -1,5 +1,6 @@
 #include "cppunitlite/TestHarness.h"
 #include "graph.h"
+#include "testutils/exceptions.h"
 
 #include <vector>
 
@@ -38,6 +39,13 @@ TESTWITHSETUP(test_stack_size_after_modification, StackSetup) {
   CHECK(stack::size() == 0);
 }
 
+TESTWITHSETUP(test_stack_maximum_size_exceeded, StackSetup) {
+  for (int i = 0; i < FPU_STACK_MAX_SIZE; i++)
+    stack::push(new node(42.0));
+
+  CHECK_FAILURE(stack::push(new node(42.0)), StackMisuseException &);
+}
+
 class MemMapSetup : public TestSetup {
 public:
   void setup() { mem_map.clear(); }
@@ -67,6 +75,12 @@ TESTWITHSETUP(test_mem_node_move_between_addresses, MemMapSetup) {
   CHECK(mem::expect_node(2)->uuid == mem::expect_node(1)->uuid);
 }
 
+TESTWITHSETUP(test_mem_access_at_invalid_address, MemMapSetup) {
+  node *n = new node(42.0);
+  mem::insert_node(1, n);
+  CHECK_FAILURE(mem::expect_node(2), NodeExpectedException &);
+}
+
 class RegMapSetup : public TestSetup {
 public:
   void setup() { reg_map.clear(); }
@@ -94,6 +108,12 @@ TESTWITHSETUP(test_reg_node_move_between_regs, RegMapSetup) {
   reg::insert_node(1, n);
   reg::write_to_other_reg(1, 2);
   CHECK(reg::expect_node(2)->uuid == reg::expect_node(1)->uuid);
+}
+
+TESTWITHSETUP(test_reg_access_at_invalid_register, RegMapSetup) {
+  node *n = new node(42.0);
+  reg::insert_node(1, n);
+  CHECK_FAILURE(reg::expect_node(1), NodeExpectedException &);
 }
 
 class MapSetup : public TestSetup {

@@ -74,12 +74,26 @@ protected:
   try {                                                                        \
     if (!(condition)) {                                                        \
       result_.addFailure(Failure(#condition, name, __FILE__, __LINE__));       \
-      passed = false;                                                           \
+      passed = false;                                                          \
     }                                                                          \
   } catch (...) {                                                              \
     result_.addFailure(                                                        \
         Failure("Unhandled exception", name, __FILE__, __LINE__));             \
-    passed = false;                                                             \
+    passed = false;                                                            \
+  }
+
+#define CHECK_FAILURE(func_call_to_fail, exception_to_expect)                  \
+  try {                                                                        \
+    func_call_to_fail;                                                         \
+    result_.addFailure(                                                        \
+        Failure("Expected to fail.", name, __FILE__, __LINE__));               \
+    passed = false;                                                            \
+  } catch (exception_to_expect) {                                              \
+    passed = true;                                                             \
+  } catch (...) {                                                              \
+    result_.addFailure(                                                        \
+        Failure("Unexpected exception occured.", name, __FILE__, __LINE__));   \
+    passed = false;                                                            \
   }
 
 #define CHECK_LONGS_EQUAL(expected, actual)                                    \

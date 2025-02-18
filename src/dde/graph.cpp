@@ -5,6 +5,10 @@
 #include <iostream>
 #include <random>
 
+#ifdef TEST_MODE
+#include "testutils/exceptions.h"
+#endif
+
 std::map<uint64_t, node *> mem_map;
 std::map<uint8_t, node *> reg_map;
 std::vector<node *> fpu_stack;
@@ -27,12 +31,23 @@ std::string get_uuid() {
 
 namespace stack {
 void push(node *n) {
+#ifndef TEST_MODE
   assert(fpu_stack.size() + 1 <= FPU_STACK_MAX_SIZE);
+#else
+  if (fpu_stack.size() + 1 > FPU_STACK_MAX_SIZE)
+    throw StackMisuseException(
+        "Wrong push to FPU stack. Stack is already full.");
+#endif
   fpu_stack.push_back(n);
 }
 
 node *pop() {
+#ifndef TEST_MODE
   assert(fpu_stack.size() > 0);
+#else
+  if(fpu_stack.size() == 0)
+    throw StackMisuseException("Wrong pop from FPU stack. Empty stack - nothing to pop.");
+#endif
 
   node *n = fpu_stack.back();
   fpu_stack.pop_back();
@@ -41,12 +56,30 @@ node *pop() {
 }
 
 node *at(uint8_t idx) {
-  assert(idx < FPU_STACK_MAX_SIZE);
+#ifndef TEST_MODE
+  assert(fpu_stack.size() > 0 && idx < fpu_stack.size());
+#else
+  if(fpu_stack.size() == 0)
+    throw StackMisuseException("Wrong access of FPU stack. Empty stack - nothing to access.");
+
+  if(idx >= fpu_stack.size())
+    throw StackMisuseException("Index is out of bound.");
+#endif
+
   return fpu_stack[idx];
 }
 
 void at(uint8_t idx, node *n) {
-  assert(idx < FPU_STACK_MAX_SIZE && idx < fpu_stack.size());
+#ifndef TEST_MODE
+  assert(fpu_stack.size() > 0 && idx < fpu_stack.size());
+#else
+  if(fpu_stack.size() == 0)
+    throw StackMisuseException("Wrong access of FPU stack. Empty stack - nothing to access.");
+
+  if(idx >= fpu_stack.size())
+    throw StackMisuseException("Index is out of bound.");
+#endif
+
   fpu_stack[idx] = n;
 }
 
@@ -119,8 +152,13 @@ std::optional<node *> get_node(uint64_t ef_addr) {
 node *expect_node(uint64_t ef_addr) {
   std::optional<node *> n = get_node(ef_addr);
 
+#ifndef TEST_MODE
   if (!n)
     assert(false);
+#else
+  if (!n)
+    throw NodeExpectedException("Expected node in memory at address " + std::to_string(ef_addr));
+#endif
 
   return n.value();
 }
@@ -147,8 +185,13 @@ std::optional<node *> get_node(uint64_t reg) {
 node *expect_node(uint64_t reg) {
   std::optional<node *> n = get_node(reg);
 
+#ifndef TEST_MODE
   if (!n)
     assert(false);
+#else
+  if (!n)
+    throw NodeExpectedException("Expected node in reg  " + std::to_string(reg));
+#endif
 
   return n.value();
 }
