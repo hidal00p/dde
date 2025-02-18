@@ -4,6 +4,7 @@
 #include "handlers.h"
 #include "params.h"
 
+#include <cassert>
 #include <cmath>
 #include <iostream>
 #define NDEBUG
@@ -43,7 +44,6 @@ void track_reg_mov(binary_op::ctx *mov_ctx, ADDRINT ea) {
       assert(false);
 
   } else {
-    show_ins(mov_ctx->ins);
     assert(false);
   }
 }
@@ -302,6 +302,7 @@ void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
 }
 } // namespace analysis
 
+#ifndef TEST_MODE
 namespace instrumentation {
 void handle_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
                        bool is_pop) {
@@ -435,3 +436,4 @@ void handle_ret(INS ins) {
   return;
 }
 } // namespace instrumentation
+#endif

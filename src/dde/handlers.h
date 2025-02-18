@@ -19,9 +19,11 @@ void track_sub(binary_op::ctx *sub_ctx, bool is_pop, bool is_reverse,
                ADDRINT ea);
 
 void track_sch();
-
+void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr);
+void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr);
 } // namespace analysis
 
+#ifndef TEST_MODE
 namespace instrumentation {
 binary_op::ctx *get_bop_operands(INS ins);
 
@@ -51,5 +53,6 @@ void handle_call(INS ins);
 
 void handle_ret(INS ins);
 } // namespace instrumentation
+#endif
 
 #endif

@@ -45,8 +45,9 @@ node *pop() {
 #ifndef TEST_MODE
   assert(fpu_stack.size() > 0);
 #else
-  if(fpu_stack.size() == 0)
-    throw StackMisuseException("Wrong pop from FPU stack. Empty stack - nothing to pop.");
+  if (fpu_stack.size() == 0)
+    throw StackMisuseException(
+        "Wrong pop from FPU stack. Empty stack - nothing to pop.");
 #endif
 
   node *n = fpu_stack.back();
@@ -59,10 +60,11 @@ node *at(uint8_t idx) {
 #ifndef TEST_MODE
   assert(fpu_stack.size() > 0 && idx < fpu_stack.size());
 #else
-  if(fpu_stack.size() == 0)
-    throw StackMisuseException("Wrong access of FPU stack. Empty stack - nothing to access.");
+  if (fpu_stack.size() == 0)
+    throw StackMisuseException(
+        "Wrong access of FPU stack. Empty stack - nothing to access.");
 
-  if(idx >= fpu_stack.size())
+  if (idx >= fpu_stack.size())
     throw StackMisuseException("Index is out of bound.");
 #endif
 
@@ -73,10 +75,11 @@ void at(uint8_t idx, node *n) {
 #ifndef TEST_MODE
   assert(fpu_stack.size() > 0 && idx < fpu_stack.size());
 #else
-  if(fpu_stack.size() == 0)
-    throw StackMisuseException("Wrong access of FPU stack. Empty stack - nothing to access.");
+  if (fpu_stack.size() == 0)
+    throw StackMisuseException(
+        "Wrong access of FPU stack. Empty stack - nothing to access.");
 
-  if(idx >= fpu_stack.size())
+  if (idx >= fpu_stack.size())
     throw StackMisuseException("Index is out of bound.");
 #endif
 
@@ -157,7 +160,8 @@ node *expect_node(uint64_t ef_addr) {
     assert(false);
 #else
   if (!n)
-    throw NodeExpectedException("Expected node in memory at address " + std::to_string(ef_addr));
+    throw NodeExpectedException("Expected node in memory at address " +
+                                std::to_string(ef_addr));
 #endif
 
   return n.value();

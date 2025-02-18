@@ -2,8 +2,10 @@
 #define PIN_H
 
 #include <cstdint>
+#include <string>
 
 typedef uint64_t ADDRINT;
+typedef void (*AFUNPTR)();
 
 typedef enum {
   REG_INVALID_ = 0,
@@ -1150,5 +1152,20 @@ bool INS_OperandIsReg(INS ins, uint8_t idx);
 bool INS_OperandIsImmediate(INS ins, uint8_t idx);
 REG INS_OperandReg(INS ins, uint8_t idx);
 uint64_t INS_OperandImmediate(INS ins, uint8_t idx);
+void PIN_SafeCopy(void *a, void *mem_addr, uint8_t size);
+std::string RTN_FindNameByAddress(ADDRINT rtn_addr);
+bool is_fpu_stack_reg(REG st);
+uint8_t get_fpu_stack_idx_from_st(REG st);
+
+struct RTN {};
+
+typedef enum {
+  MAIN = 0,
+  FOO = 10,
+  SINUS = 11,
+  COSINUS = 12,
+  BAR = 20,
+  EMPTY = 42
+} RtnName;
 
 #endif

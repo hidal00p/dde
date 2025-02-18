@@ -1,6 +1,6 @@
 TARGET = libpin.a
 OBJECTS = pin.o
-CPP_FLAGS := -std=c++17 -g $(INCLUDE_FLAGS)
+CPP_FLAGS := -std=c++17 -g -DTARGET_IA32E $(INCLUDE_FLAGS)
 
 $(TARGET): $(OBJECTS)
 	ar cr $@ $^

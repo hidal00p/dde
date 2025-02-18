@@ -35,8 +35,8 @@ clean:
 	@make -C $(INTEGRATION_DIR) clean
 	@make -C $(UNIT_DIR) clean
 	@make -C $(MOCK_LIB_DIR) clean
-	@make -C $(TESTUTILS_LIB_DIR) format
-	@make -C $(UNIT_TEST_DIR) format
+	@make -C $(TESTUTILS_LIB_DIR) clean
+	@make -C $(UNIT_TEST_DIR) clean
 
 format:
 	@make -C $(INTEGRATION_DIR) format
