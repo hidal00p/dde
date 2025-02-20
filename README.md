@@ -1,4 +1,12 @@
-# dde - dynamic DAG extractor
+```text
+                                                      ____  ____  _____ 
+                                                     |  _ \|  _ \| ____|
+                                                     | | | | | | |  _|  
+                                                     | |_| | |_| | |___ 
+                                                     |____/|____/|_____|
+
+                                                   (dynamic DAG extractor)
+```
 
 <div align="left">
 
