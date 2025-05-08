@@ -43,7 +43,7 @@ TESTWITHSETUP(test_stack_maximum_size_exceeded, StackSetup) {
   for (int i = 0; i < FPU_STACK_MAX_SIZE; i++)
     stack::push(new node(42.0));
 
-  CHECK_FAILURE(stack::push(new node(42.0)), StackMisuseException &);
+  CHECK_FAILURE(stack::push(new node(42.0)), StackMisuseException);
 }
 
 class MemMapSetup : public TestSetup {
@@ -78,7 +78,7 @@ TESTWITHSETUP(test_mem_node_move_between_addresses, MemMapSetup) {
 TESTWITHSETUP(test_mem_access_at_invalid_address, MemMapSetup) {
   node *n = new node(42.0);
   mem::insert_node(1, n);
-  CHECK_FAILURE(mem::expect_node(2), NodeExpectedException &);
+  CHECK_FAILURE(mem::expect_node(2), NodeExpectedException);
 }
 
 class RegMapSetup : public TestSetup {
@@ -113,7 +113,7 @@ TESTWITHSETUP(test_reg_node_move_between_regs, RegMapSetup) {
 TESTWITHSETUP(test_reg_access_at_invalid_register, RegMapSetup) {
   node *n = new node(42.0);
   reg::insert_node(1, n);
-  CHECK_FAILURE(reg::expect_node(2), NodeExpectedException &);
+  CHECK_FAILURE(reg::expect_node(2), NodeExpectedException);
 }
 
 class MapSetup : public TestSetup {

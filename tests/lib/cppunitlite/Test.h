@@ -88,7 +88,7 @@ protected:
     result_.addFailure(                                                        \
         Failure("Expected to fail.", name, __FILE__, __LINE__));               \
     passed = false;                                                            \
-  } catch (exception_to_expect) {                                              \
+  } catch (exception_to_expect &) {                                            \
     passed = true;                                                             \
   } catch (...) {                                                              \
     result_.addFailure(                                                        \
