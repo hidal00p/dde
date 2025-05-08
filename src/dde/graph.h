@@ -39,6 +39,8 @@ struct node {
     n_operands = n_oprs;
     tr = trn;
   }
+
+  bool is_leaf();
 };
 
 extern std::map<uint64_t, node *> mem_map;

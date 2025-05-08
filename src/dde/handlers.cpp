@@ -163,7 +163,9 @@ void track_mul(binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea) {
     stack::at(dest_idx,
               new node(
                   src_node->value * dest_node->value, 2,
-                  new node *[] { src_node, dest_node }, transformation::MUL));
+                  new node *[] { src_node, dest_node },
+                  transformation::MUL)); // this does not make sense. I could
+                                         // just compute derivatives right here.
 
     if (is_pop)
       assert(stack::pop()->uuid == src_node->uuid);
