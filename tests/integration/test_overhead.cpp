@@ -103,8 +103,8 @@ int main() {
   TIME("compound", compound, max_iter * raw_factor)
   TIME_DDE("compound", compound, max_iter)
 
-  TIME("compound_sa", compound_sa, max_iter * raw_factor)
-  TIME_DDE("compound_sa", compound_sa, max_iter)
+  TIME("compound_sac", compound_sa, max_iter * raw_factor)
+  TIME_DDE("compound_sac", compound_sa, max_iter)
 
   return 0;
 }

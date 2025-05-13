@@ -1,7 +1,6 @@
 import sys
 import pathlib as pl
 import numpy as np
-import pprint
 
 from tabulate import tabulate
 
@@ -43,13 +42,13 @@ def analyze(stats_path: pl.Path):
         if name not in comparison_data:
             comparison_data[name] = []
 
-        stats = extract_stats(np.array(val)[1:])
+        stats = extract_stats(np.array(val)[0:])
         comparison_data[name].append([key] + stats)
 
     table = []
     for stats_pair in comparison_data.values():
         raw, dde = stats_pair[0], stats_pair[1]
-        overhead = int(dde[2] / raw[2])
+        overhead = round(dde[2] / raw[2], 4)
         table.append([raw[0]] + raw[1:] + ["-"])
         table.append([dde[0]] + dde[1:] + [overhead])
 
