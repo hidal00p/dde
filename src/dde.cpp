@@ -1,11 +1,8 @@
-#include "dde/pin_utils.h"
-
 #include "dde/graph.h"
 #include "dde/handlers.h"
 #include "dde/params.h"
 
 #include <cassert>
-#include <cmath>
 #include <iostream>
 
 VOID instruction(INS ins, VOID *v) {
@@ -224,9 +221,6 @@ int main(int argc, char *argv[]) {
   // Initialize pin and symbols
   PIN_InitSymbols();
   if (PIN_Init(argc, argv))
-    return usage();
-
-  if (parse_args(argc, argv))
     return usage();
 
   // Register Instruction to be called to instrument instructions
