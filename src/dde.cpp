@@ -74,7 +74,7 @@ VOID instruction(INS ins, VOID *v) {
   } else if (opcode == XED_ICLASS_FDIVR) {
     instrumentation::handle_div(ins, false, true);
     return;
-  } else if (opcode == XED_ICLASS_FDIVR) {
+  } else if (opcode == XED_ICLASS_FDIVRP) {
     instrumentation::handle_div(ins, true, true);
     return;
   }

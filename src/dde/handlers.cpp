@@ -5,8 +5,6 @@
 #include "params.h"
 
 #include <cassert>
-#include <cmath>
-#include <iostream>
 #define NDEBUG
 
 bool is_abi_reg(REG reg) {
@@ -17,8 +15,8 @@ bool is_abi_reg(REG reg) {
 
 namespace analysis {
 void track_reg_mov(binary_op::ctx *mov_ctx, ADDRINT ea) {
-  // Primarily to handle parameter
-  // passing ABI, so we assume all the nodes exist
+  // Primarily to handle parameter passing with
+  // x86 calling convention, so we assume all the nodes exist.
 
   if (mov_ctx->src.type == OprType::MEM) {
     assert(mov_ctx->dest.type == OprType::REGSTR);
@@ -62,16 +60,18 @@ void track_fpu_mov(binary_op::ctx *mov_ctx, bool is_pop, ADDRINT ea) {
       PIN_SafeCopy((void *)&value, (void *)ea, sizeof(double));
       n = new node(value);
 
-      if (!node_recorded && !from_data_sec)
+      if (!node_recorded && !from_data_sec) {
         mem::insert_node(ea, n);
+      }
 
       if (var_marking_ctx.is_var_marked) {
         n->uuid = var_marking_ctx.mark;
         n->output = var_marking_ctx.output;
       }
 
-    } else
+    } else {
       n = mem::expect_node(ea);
+    }
 
     stack::push(n);
 
@@ -85,23 +85,28 @@ void track_fpu_mov(binary_op::ctx *mov_ctx, bool is_pop, ADDRINT ea) {
       }
 
       mem::insert_node(ea, stack::top());
-      if (is_pop)
+      if (is_pop) {
         stack::pop();
+      }
 
-    } else if (mov_ctx->dest.type == OprType::REGSTR)
+    } else if (mov_ctx->dest.type == OprType::REGSTR) {
       stack::push(stack::top());
+    }
 
-    else
+    else {
       assert(false);
+    }
 
   } else {
     assert(mov_ctx->src.type == OprType::IMM &&
            mov_ctx->dest.type == OprType::REGSTR);
     node *n = new node(mov_ctx->src.origin.imm);
+
     if (var_marking_ctx.is_var_marked) {
       n->uuid = var_marking_ctx.mark;
       n->output = var_marking_ctx.output;
     }
+
     stack::push(n);
   }
 }
@@ -132,8 +137,9 @@ void track_add(binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea) {
                   src_node->value + dest_node->value, 2,
                   new node *[] { src_node, dest_node }, transformation::ADD));
 
-    if (is_pop)
+    if (is_pop) {
       assert(stack::pop()->uuid == src_node->uuid);
+    }
   } else {
     assert(false);
   }
@@ -167,8 +173,9 @@ void track_mul(binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea) {
                   transformation::MUL)); // this does not make sense. I could
                                          // just compute derivatives right here.
 
-    if (is_pop)
+    if (is_pop) {
       assert(stack::pop()->uuid == src_node->uuid);
+    }
   } else {
     assert(false);
   }
@@ -204,8 +211,9 @@ void track_div(binary_op::ctx *div_ctx, bool is_pop, bool is_reverse,
 
     stack::at(dest_idx, new node(value, 2, operands, transformation::DIV));
 
-    if (is_pop)
+    if (is_pop) {
       assert(stack::pop()->uuid == src_node->uuid);
+    }
   } else {
     assert(false);
   }
@@ -241,8 +249,9 @@ void track_sub(binary_op::ctx *sub_ctx, bool is_pop, bool is_reverse,
                                  : new node *[] { dest_node, src_node };
     stack::at(dest_idx, new node(value, 2, operands, transformation::SUB));
 
-    if (is_pop)
+    if (is_pop) {
       assert(stack::pop()->uuid == src_node->uuid);
+    }
   } else {
     assert(false);
   }
@@ -312,14 +321,15 @@ void handle_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
   // For FP instructions we assume that memory can only be a source operand.
   // This is a valid assumption, since all the FPU arithmetic operations are
   // proxied via the FPU stack registers.
-  if (bop_ctx->src.type == OprType::MEM)
+  if (bop_ctx->src.type == OprType::MEM) {
     INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_PTR, bop_ctx, IARG_BOOL,
                    is_pop, IARG_MEMORYREAD_EA, IARG_END);
-  else if (bop_ctx->src.type == OprType::REGSTR)
+  } else if (bop_ctx->src.type == OprType::REGSTR) {
     INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_PTR, bop_ctx, IARG_BOOL,
                    is_pop, IARG_ADDRINT, 0, IARG_END);
-  else
+  } else {
     assert(false);
+  }
 }
 
 void handle_non_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
@@ -328,27 +338,29 @@ void handle_non_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
   // For FP instructions we assume that memory can only be a source operand.
   // This is a valid assumption, since all the FPU arithmetic operations are
   // proxied via the FPU stack registers.
-  if (bop_ctx->src.type == OprType::MEM)
+  if (bop_ctx->src.type == OprType::MEM) {
     INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_PTR, bop_ctx, IARG_BOOL,
                    is_pop, IARG_BOOL, is_reverse, IARG_MEMORYREAD_EA, IARG_END);
-  else if (bop_ctx->src.type == OprType::REGSTR)
+  } else if (bop_ctx->src.type == OprType::REGSTR) {
     INS_InsertCall(ins, IPOINT_BEFORE, func, IARG_PTR, bop_ctx, IARG_BOOL,
                    is_pop, IARG_BOOL, is_reverse, IARG_ADDRINT, 0, IARG_END);
-  else
+  } else {
     assert(false);
+  }
 }
 
 void handle_reg_mov(INS ins) {
   binary_op::ctx *mov_ctx = binary_op::get_bop_operands(ins);
   // We assume that there is no mem to mem IO
-  if (mov_ctx->src.type == OprType::MEM)
+  if (mov_ctx->src.type == OprType::MEM) {
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,
                    IARG_PTR, mov_ctx, IARG_MEMORYREAD_EA, IARG_END);
-
-  else if (mov_ctx->dest.type == OprType::MEM) {
+  } else if (mov_ctx->dest.type == OprType::MEM) {
     REG src_reg = mov_ctx->src.origin.reg;
-    if (!is_abi_reg(src_reg))
+
+    if (!is_abi_reg(src_reg)) {
       return;
+    }
 
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,
                    IARG_PTR, mov_ctx, IARG_MEMORYWRITE_EA, IARG_END);
@@ -357,8 +369,10 @@ void handle_reg_mov(INS ins) {
     // Implicit reg to reg
     REG dest_reg = mov_ctx->dest.origin.reg;
     REG src_reg = mov_ctx->src.origin.reg;
-    if (!is_abi_reg(dest_reg) || !is_abi_reg(src_reg))
+
+    if (!is_abi_reg(dest_reg) || !is_abi_reg(src_reg)) {
       return;
+    }
 
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_reg_mov,
                    IARG_PTR, mov_ctx, IARG_UINT32, 0, IARG_END);
@@ -371,20 +385,19 @@ void handle_fpu_mov(INS ins, bool is_pop) {
   // FPU-wise memory can either be written to or read from
   // at the same time, these two do not happen as a part of
   // the same op.
-  if (mov_ctx->src.type == OprType::MEM)
+  if (mov_ctx->src.type == OprType::MEM) {
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_fpu_mov,
                    IARG_PTR, mov_ctx, IARG_BOOL, is_pop, IARG_MEMORYREAD_EA,
                    IARG_END);
-
-  else if (mov_ctx->dest.type == OprType::MEM)
+  } else if (mov_ctx->dest.type == OprType::MEM) {
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_fpu_mov,
                    IARG_PTR, mov_ctx, IARG_BOOL, is_pop, IARG_MEMORYWRITE_EA,
                    IARG_END);
-
-  else
+  } else {
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::track_fpu_mov,
                    IARG_PTR, mov_ctx, IARG_BOOL, is_pop, IARG_UINT32, 0,
                    IARG_END);
+  }
 }
 
 void handle_fpu_const_load(INS ins, uint8_t constant) {
