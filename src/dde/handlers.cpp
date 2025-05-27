@@ -51,14 +51,14 @@ void track_fpu_mov(binary_op::ctx *mov_ctx, bool is_pop, ADDRINT ea) {
     // We anticipate a load onto an FPU stack
     assert(mov_ctx->dest.type == OprType::REGSTR);
 
-    node *n;
+    Node *n;
     bool from_data_sec = sec_info.rodata.within_range(ea);
     bool node_recorded = mem::is_node_recorded(ea);
 
     if (from_data_sec || !node_recorded) {
       double value;
       PIN_SafeCopy((void *)&value, (void *)ea, sizeof(double));
-      n = new node(value);
+      n = new Node(value);
 
       if (!node_recorded && !from_data_sec) {
         mem::insert_node(ea, n);
@@ -100,7 +100,7 @@ void track_fpu_mov(binary_op::ctx *mov_ctx, bool is_pop, ADDRINT ea) {
   } else {
     assert(mov_ctx->src.type == OprType::IMM &&
            mov_ctx->dest.type == OprType::REGSTR);
-    node *n = new node(mov_ctx->src.origin.imm);
+    Node *n = new Node(mov_ctx->src.origin.imm);
 
     if (var_marking_ctx.is_var_marked) {
       n->uuid = var_marking_ctx.mark;
@@ -114,15 +114,15 @@ void track_fpu_mov(binary_op::ctx *mov_ctx, bool is_pop, ADDRINT ea) {
 void track_add(binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea) {
   // It is implied that the 2nd operand is a register
 
-  node *src_node, *dest_node;
+  Node *src_node, *dest_node;
 
   if (add_ctx->src.type == OprType::MEM) {
     assert(!is_pop);
     src_node = mem::expect_node(ea);
     dest_node = stack::pop();
-    stack::push(new node(
+    stack::push(new Node(
         src_node->value + dest_node->value, 2,
-        new node *[] { src_node, dest_node }, transformation::ADD));
+        new Node *[] { src_node, dest_node }, transformation::ADD));
   } else if (add_ctx->src.type == OprType::REGSTR) {
     uint8_t src_idx =
         stack::size() - 1 - get_fpu_stack_idx_from_st(add_ctx->src.origin.reg);
@@ -133,9 +133,9 @@ void track_add(binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea) {
     dest_node = stack::at(dest_idx);
 
     stack::at(dest_idx,
-              new node(
+              new Node(
                   src_node->value + dest_node->value, 2,
-                  new node *[] { src_node, dest_node }, transformation::ADD));
+                  new Node *[] { src_node, dest_node }, transformation::ADD));
 
     if (is_pop) {
       assert(stack::pop()->uuid == src_node->uuid);
@@ -148,15 +148,15 @@ void track_add(binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea) {
 void track_mul(binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea) {
   // It is implied that the 2nd operand is a register
 
-  node *src_node, *dest_node;
+  Node *src_node, *dest_node;
 
   if (mul_ctx->src.type == OprType::MEM) {
     assert(!is_pop);
     src_node = mem::expect_node(ea);
     dest_node = stack::pop();
-    stack::push(new node(
+    stack::push(new Node(
         src_node->value * dest_node->value, 2,
-        new node *[] { src_node, dest_node }, transformation::MUL));
+        new Node *[] { src_node, dest_node }, transformation::MUL));
   } else if (mul_ctx->src.type == OprType::REGSTR) {
     uint8_t src_idx =
         stack::size() - 1 - get_fpu_stack_idx_from_st(mul_ctx->src.origin.reg);
@@ -167,9 +167,9 @@ void track_mul(binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea) {
     dest_node = stack::at(dest_idx);
 
     stack::at(dest_idx,
-              new node(
+              new Node(
                   src_node->value * dest_node->value, 2,
-                  new node *[] { src_node, dest_node },
+                  new Node *[] { src_node, dest_node },
                   transformation::MUL)); // this does not make sense. I could
                                          // just compute derivatives right here.
 
@@ -185,7 +185,7 @@ void track_div(binary_op::ctx *div_ctx, bool is_pop, bool is_reverse,
                ADDRINT ea) {
   // It is implied that the 2nd operand is a register
 
-  node *src_node, *dest_node;
+  Node *src_node, *dest_node;
 
   if (div_ctx->src.type == OprType::MEM) {
     assert(!is_pop);
@@ -193,9 +193,9 @@ void track_div(binary_op::ctx *div_ctx, bool is_pop, bool is_reverse,
     dest_node = stack::pop();
     double value = is_reverse ? src_node->value / dest_node->value
                               : dest_node->value / src_node->value;
-    node **operands = is_reverse ? new node *[] { src_node, dest_node }
-                                 : new node *[] { dest_node, src_node };
-    stack::push(new node(value, 2, operands, transformation::DIV));
+    Node **operands = is_reverse ? new Node *[] { src_node, dest_node }
+                                 : new Node *[] { dest_node, src_node };
+    stack::push(new Node(value, 2, operands, transformation::DIV));
   } else if (div_ctx->src.type == OprType::REGSTR) {
     uint8_t src_idx =
         stack::size() - 1 - get_fpu_stack_idx_from_st(div_ctx->src.origin.reg);
@@ -206,10 +206,10 @@ void track_div(binary_op::ctx *div_ctx, bool is_pop, bool is_reverse,
     dest_node = stack::at(dest_idx);
     double value = is_reverse ? src_node->value / dest_node->value
                               : dest_node->value / src_node->value;
-    node **operands = is_reverse ? new node *[] { src_node, dest_node }
-                                 : new node *[] { dest_node, src_node };
+    Node **operands = is_reverse ? new Node *[] { src_node, dest_node }
+                                 : new Node *[] { dest_node, src_node };
 
-    stack::at(dest_idx, new node(value, 2, operands, transformation::DIV));
+    stack::at(dest_idx, new Node(value, 2, operands, transformation::DIV));
 
     if (is_pop) {
       assert(stack::pop()->uuid == src_node->uuid);
@@ -223,7 +223,7 @@ void track_sub(binary_op::ctx *sub_ctx, bool is_pop, bool is_reverse,
                ADDRINT ea) {
   // It is implied that the 2nd operand is a register
 
-  node *src_node, *dest_node;
+  Node *src_node, *dest_node;
 
   if (sub_ctx->src.type == OprType::MEM) {
     assert(!is_pop);
@@ -231,9 +231,9 @@ void track_sub(binary_op::ctx *sub_ctx, bool is_pop, bool is_reverse,
     dest_node = stack::pop();
     double value = is_reverse ? src_node->value - dest_node->value
                               : dest_node->value - src_node->value;
-    node **operands = is_reverse ? new node *[] { src_node, dest_node }
-                                 : new node *[] { dest_node, src_node };
-    stack::push(new node(value, 2, operands, transformation::SUB));
+    Node **operands = is_reverse ? new Node *[] { src_node, dest_node }
+                                 : new Node *[] { dest_node, src_node };
+    stack::push(new Node(value, 2, operands, transformation::SUB));
   } else if (sub_ctx->src.type == OprType::REGSTR) {
     uint8_t src_idx =
         stack::size() - 1 - get_fpu_stack_idx_from_st(sub_ctx->src.origin.reg);
@@ -245,9 +245,9 @@ void track_sub(binary_op::ctx *sub_ctx, bool is_pop, bool is_reverse,
 
     double value = is_reverse ? src_node->value - dest_node->value
                               : dest_node->value - src_node->value;
-    node **operands = is_reverse ? new node *[] { src_node, dest_node }
-                                 : new node *[] { dest_node, src_node };
-    stack::at(dest_idx, new node(value, 2, operands, transformation::SUB));
+    Node **operands = is_reverse ? new Node *[] { src_node, dest_node }
+                                 : new Node *[] { dest_node, src_node };
+    stack::at(dest_idx, new Node(value, 2, operands, transformation::SUB));
 
     if (is_pop) {
       assert(stack::pop()->uuid == src_node->uuid);
@@ -258,9 +258,9 @@ void track_sub(binary_op::ctx *sub_ctx, bool is_pop, bool is_reverse,
 }
 
 void track_sch() {
-  node *src_node = stack::pop();
-  stack::push(new node(
-      -1 * src_node->value, 1, new node *[] { src_node }, transformation::CHS));
+  Node *src_node = stack::pop();
+  stack::push(new Node(
+      -1 * src_node->value, 1, new Node *[] { src_node }, transformation::CHS));
 }
 
 void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
@@ -283,9 +283,9 @@ void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
   // TODO: this is dangerous, what if nullopt
   Intrinsic intr = get_intrinsic_from_rtn_name(branch_name).value();
 
-  node *n = reg::expect_node(REG_XMM0);
-  node *y = new node(
-      intr.intrinsic_call(n->value), 1, new node *[] { n }, intr.transf);
+  Node *n = reg::expect_node(REG_XMM0);
+  Node *y = new Node(
+      intr.intrinsic_call(n->value), 1, new Node *[] { n }, intr.transf);
 
   reg::insert_node(REG_XMM0, y);
 #endif

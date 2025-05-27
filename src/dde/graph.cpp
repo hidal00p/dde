@@ -9,9 +9,9 @@
 #include "testutils/exceptions.h"
 #endif
 
-std::map<uint64_t, node *> mem_map;
-std::map<uint8_t, node *> reg_map;
-std::vector<node *> fpu_stack;
+std::map<uint64_t, Node *> mem_map;
+std::map<uint8_t, Node *> reg_map;
+std::vector<Node *> fpu_stack;
 
 std::string get_uuid() {
   static const uint id_length = 7;
@@ -30,7 +30,7 @@ std::string get_uuid() {
 }
 
 namespace stack {
-void push(node *n) {
+void push(Node *n) {
 #ifndef TEST_MODE
   assert(fpu_stack.size() + 1 <= FPU_STACK_MAX_SIZE);
 #else
@@ -41,7 +41,7 @@ void push(node *n) {
   fpu_stack.push_back(n);
 }
 
-node *pop() {
+Node *pop() {
 #ifndef TEST_MODE
   assert(fpu_stack.size() > 0);
 #else
@@ -50,13 +50,13 @@ node *pop() {
         "Wrong pop from FPU stack. Empty stack - nothing to pop.");
 #endif
 
-  node *n = fpu_stack.back();
+  Node *n = fpu_stack.back();
   fpu_stack.pop_back();
 
   return n;
 }
 
-node *at(uint8_t idx) {
+Node *at(uint8_t idx) {
 #ifndef TEST_MODE
   assert(fpu_stack.size() > 0 && idx < fpu_stack.size());
 #else
@@ -71,7 +71,7 @@ node *at(uint8_t idx) {
   return fpu_stack[idx];
 }
 
-void at(uint8_t idx, node *n) {
+void at(uint8_t idx, Node *n) {
 #ifndef TEST_MODE
   assert(fpu_stack.size() > 0 && idx < fpu_stack.size());
 #else
@@ -86,7 +86,7 @@ void at(uint8_t idx, node *n) {
   fpu_stack[idx] = n;
 }
 
-node *top() {
+Node *top() {
   assert(fpu_stack.size() > 0);
   return fpu_stack.back();
 }
@@ -98,12 +98,12 @@ bool is_visited(std::string uuid, uuid_list visited) {
   return std::find(visited.begin(), visited.end(), uuid) != visited.end();
 }
 
-bool node::is_leaf() { return this->operands != nullptr && this->output; }
+bool Node::is_leaf() { return this->operands != nullptr && this->output; }
 
 std::string graph_path = "/tmp/prog.gr";
 std::ofstream graph_file;
 
-void show_node(node *n, std::string prefix, uuid_list &visited) {
+void show_node(Node *n, std::string prefix, uuid_list &visited) {
   if (!graph_file.is_open())
     std::exit(-1);
 
@@ -146,17 +146,17 @@ void show_mem_map() {
 void clean_mem_map() { mem_map.clear(); }
 
 namespace mem {
-void insert_node(uint64_t ef_addr, node *n) { mem_map[ef_addr] = n; };
+void insert_node(uint64_t ef_addr, Node *n) { mem_map[ef_addr] = n; };
 
 bool is_node_recorded(uint64_t ef_addr) { return mem_map.count(ef_addr) > 0; }
 
-std::optional<node *> get_node(uint64_t ef_addr) {
-  return is_node_recorded(ef_addr) ? std::optional<node *>{mem_map[ef_addr]}
+std::optional<Node *> get_node(uint64_t ef_addr) {
+  return is_node_recorded(ef_addr) ? std::optional<Node *>{mem_map[ef_addr]}
                                    : std::nullopt;
 }
 
-node *expect_node(uint64_t ef_addr) {
-  std::optional<node *> n = get_node(ef_addr);
+Node *expect_node(uint64_t ef_addr) {
+  std::optional<Node *> n = get_node(ef_addr);
 
 #ifndef TEST_MODE
   if (!n)
@@ -180,17 +180,17 @@ void write_to_mem(uint64_t from_mem, uint64_t to_mem) {
 } // namespace mem
 
 namespace reg {
-void insert_node(uint64_t reg, node *n) { reg_map[reg] = n; };
+void insert_node(uint64_t reg, Node *n) { reg_map[reg] = n; };
 
 bool is_node_recorded(uint64_t reg) { return reg_map.count(reg) > 0; }
 
-std::optional<node *> get_node(uint64_t reg) {
-  return is_node_recorded(reg) ? std::optional<node *>{reg_map[reg]}
+std::optional<Node *> get_node(uint64_t reg) {
+  return is_node_recorded(reg) ? std::optional<Node *>{reg_map[reg]}
                                : std::nullopt;
 }
 
-node *expect_node(uint64_t reg) {
-  std::optional<node *> n = get_node(reg);
+Node *expect_node(uint64_t reg) {
+  std::optional<Node *> n = get_node(reg);
 
 #ifndef TEST_MODE
   if (!n)
