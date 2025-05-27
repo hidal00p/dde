@@ -9,9 +9,9 @@
 #include "testutils/exceptions.h"
 #endif
 
-std::map<uint64_t, Node *> mem_map;
-std::map<uint8_t, Node *> reg_map;
-std::vector<Node *> fpu_stack;
+std::map<uint64_t, NodePtr> mem_map;
+std::map<uint8_t, NodePtr> reg_map;
+NodePtrVec fpu_stack;
 
 std::string get_uuid() {
   static const uint id_length = 7;
@@ -30,7 +30,7 @@ std::string get_uuid() {
 }
 
 namespace stack {
-void push(Node *n) {
+void push(NodePtr n) {
 #ifndef TEST_MODE
   assert(fpu_stack.size() + 1 <= FPU_STACK_MAX_SIZE);
 #else
@@ -41,7 +41,7 @@ void push(Node *n) {
   fpu_stack.push_back(n);
 }
 
-Node *pop() {
+NodePtr pop() {
 #ifndef TEST_MODE
   assert(fpu_stack.size() > 0);
 #else
@@ -50,13 +50,13 @@ Node *pop() {
         "Wrong pop from FPU stack. Empty stack - nothing to pop.");
 #endif
 
-  Node *n = fpu_stack.back();
+  NodePtr n = fpu_stack.back();
   fpu_stack.pop_back();
 
   return n;
 }
 
-Node *at(uint8_t idx) {
+NodePtr at(uint8_t idx) {
 #ifndef TEST_MODE
   assert(fpu_stack.size() > 0 && idx < fpu_stack.size());
 #else
@@ -71,7 +71,7 @@ Node *at(uint8_t idx) {
   return fpu_stack[idx];
 }
 
-void at(uint8_t idx, Node *n) {
+void at(uint8_t idx, NodePtr n) {
 #ifndef TEST_MODE
   assert(fpu_stack.size() > 0 && idx < fpu_stack.size());
 #else
@@ -86,7 +86,7 @@ void at(uint8_t idx, Node *n) {
   fpu_stack[idx] = n;
 }
 
-Node *top() {
+NodePtr top() {
   assert(fpu_stack.size() > 0);
   return fpu_stack.back();
 }
@@ -98,12 +98,12 @@ bool is_visited(std::string uuid, uuid_list visited) {
   return std::find(visited.begin(), visited.end(), uuid) != visited.end();
 }
 
-bool Node::is_leaf() { return this->operands != nullptr && this->output; }
+bool Node::is_leaf() { return !operands.empty() && output; }
 
 std::string graph_path = "/tmp/prog.gr";
 std::ofstream graph_file;
 
-void show_node(Node *n, std::string prefix, uuid_list &visited) {
+void show_node(NodePtr n, std::string prefix, uuid_list &visited) {
   if (!graph_file.is_open())
     std::exit(-1);
 
@@ -119,11 +119,12 @@ void show_node(Node *n, std::string prefix, uuid_list &visited) {
                                                       : "cos";
   graph_file << " " << tr_str << std::endl;
 
-  if (is_visited(n->uuid, visited))
+  if (is_visited(n->uuid, visited)) {
     return;
+  }
 
-  for (uint i = 0; i < n->n_operands; i++) {
-    show_node(n->operands[i], prefix + " ", visited);
+  for (auto &operand : n->operands) {
+    show_node(operand, prefix + " ", visited);
     visited.push_back(n->uuid);
   }
 }
@@ -146,17 +147,17 @@ void show_mem_map() {
 void clean_mem_map() { mem_map.clear(); }
 
 namespace mem {
-void insert_node(uint64_t ef_addr, Node *n) { mem_map[ef_addr] = n; };
+void insert_node(uint64_t ef_addr, NodePtr n) { mem_map[ef_addr] = n; };
 
 bool is_node_recorded(uint64_t ef_addr) { return mem_map.count(ef_addr) > 0; }
 
-std::optional<Node *> get_node(uint64_t ef_addr) {
-  return is_node_recorded(ef_addr) ? std::optional<Node *>{mem_map[ef_addr]}
+std::optional<NodePtr> get_node(uint64_t ef_addr) {
+  return is_node_recorded(ef_addr) ? std::optional<NodePtr>{mem_map[ef_addr]}
                                    : std::nullopt;
 }
 
-Node *expect_node(uint64_t ef_addr) {
-  std::optional<Node *> n = get_node(ef_addr);
+NodePtr expect_node(uint64_t ef_addr) {
+  std::optional<NodePtr> n = get_node(ef_addr);
 
 #ifndef TEST_MODE
   if (!n)
@@ -180,17 +181,17 @@ void write_to_mem(uint64_t from_mem, uint64_t to_mem) {
 } // namespace mem
 
 namespace reg {
-void insert_node(uint64_t reg, Node *n) { reg_map[reg] = n; };
+void insert_node(uint64_t reg, NodePtr n) { reg_map[reg] = n; };
 
 bool is_node_recorded(uint64_t reg) { return reg_map.count(reg) > 0; }
 
-std::optional<Node *> get_node(uint64_t reg) {
-  return is_node_recorded(reg) ? std::optional<Node *>{reg_map[reg]}
+std::optional<NodePtr> get_node(uint64_t reg) {
+  return is_node_recorded(reg) ? std::optional<NodePtr>{reg_map[reg]}
                                : std::nullopt;
 }
 
-Node *expect_node(uint64_t reg) {
-  std::optional<Node *> n = get_node(reg);
+NodePtr expect_node(uint64_t reg) {
+  std::optional<NodePtr> n = get_node(reg);
 
 #ifndef TEST_MODE
   if (!n)

@@ -25,7 +25,7 @@ public:
 
 TESTWITHSETUP(test_call_to_intrnsic_disables_instrumentation, DdeStateSetup) {
   dde_state.to_instrument = true;
-  reg::insert_node(REG_XMM0, new node(Pi / 2));
+  reg::insert_node(REG_XMM0, std::make_shared<Node>(Pi / 2));
 
   analysis::track_call_to_intrinsic(SINUS, MAIN);
   CHECK(dde_state.to_instrument == false);
@@ -34,7 +34,7 @@ TESTWITHSETUP(test_call_to_intrnsic_disables_instrumentation, DdeStateSetup) {
 TESTWITHSETUP(test_call_to_intrnsic_as_a_transformation, DdeStateSetup) {
   dde_state.to_instrument = true;
 
-  reg::insert_node(REG_XMM0, new node(Pi / 2));
+  reg::insert_node(REG_XMM0, std::make_shared<Node>(Pi / 2));
   analysis::track_call_to_intrinsic(SINUS, MAIN);
 
   CHECK_DOUBLES_EQUAL(reg::expect_node(REG_XMM0)->value, std::sin(Pi / 2));
@@ -44,7 +44,7 @@ TESTWITHSETUP(test_return_from_intrnsic_enables_instrumentation,
               DdeStateSetup) {
   dde_state.to_instrument = true;
 
-  reg::insert_node(REG_XMM0, new node(Pi / 2));
+  reg::insert_node(REG_XMM0, std::make_shared<Node>(Pi / 2));
   analysis::track_call_to_intrinsic(SINUS, MAIN);
 
   analysis::track_ret_from_intrinsic(MAIN, SINUS);
