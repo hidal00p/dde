@@ -7,7 +7,6 @@
 #include "dde.h"
 #include "graph.h"
 #include "mylib.h"
-#include "mytime.h"
 
 std::string graph_path("/tmp/prog.gr");
 bool parse_args(int argc, char *argv[]);
