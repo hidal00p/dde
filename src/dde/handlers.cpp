@@ -447,7 +447,7 @@ void handle_fpu_mov(INS ins, bool is_pop) {
 }
 
 void handle_fpu_const_load(INS ins, uint8_t constant) {
-  static const uint8_t DEST_IDX = 0;
+  constexpr uint8_t DEST_IDX = 0;
 
   // Manually construct a move context for instructions like FLDZ
   binary_op::ctx *mov_ctx = new binary_op::ctx();

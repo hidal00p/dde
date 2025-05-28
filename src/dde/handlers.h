@@ -25,8 +25,6 @@ void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr);
 
 #ifndef TEST_MODE
 namespace instrumentation {
-binary_op::ctx *get_bop_operands(INS ins);
-
 void handle_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
                        bool is_pop);
 

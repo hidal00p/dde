@@ -160,8 +160,9 @@ NodePtr expect_node(uint64_t ef_addr) {
   std::optional<NodePtr> n = get_node(ef_addr);
 
 #ifndef TEST_MODE
-  if (!n)
+  if (!n) {
     assert(false);
+  }
 #else
   if (!n)
     throw NodeExpectedException("Expected node in memory at address " +

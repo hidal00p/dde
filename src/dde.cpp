@@ -220,8 +220,9 @@ bool parse_args(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   // Initialize pin and symbols
   PIN_InitSymbols();
-  if (PIN_Init(argc, argv))
+  if (PIN_Init(argc, argv)) {
     return usage();
+  }
 
   // Register Instruction to be called to instrument instructions
   IMG_AddInstrumentFunction(image, 0);
