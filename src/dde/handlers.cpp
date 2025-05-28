@@ -125,7 +125,7 @@ void track_add(binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea) {
 
     NodePtr new_node = std::make_shared<Node>(
         src_node->value + dest_node->value, (NodePtrVec){src_node, dest_node},
-        transformation::ADD);
+        Transformation::ADD);
     stack::push(new_node);
 
   } else if (add_ctx->src.type == OprType::REGSTR) {
@@ -139,7 +139,7 @@ void track_add(binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea) {
 
     NodePtr new_node = std::make_shared<Node>(
         src_node->value + dest_node->value, (NodePtrVec){src_node, dest_node},
-        transformation::ADD);
+        Transformation::ADD);
     stack::at(dest_idx, new_node);
 
     if (is_pop) {
@@ -163,7 +163,7 @@ void track_mul(binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea) {
 
     NodePtr new_node = std::make_shared<Node>(
         src_node->value * dest_node->value, (NodePtrVec){src_node, dest_node},
-        transformation::MUL);
+        Transformation::MUL);
     stack::push(new_node);
 
   } else if (mul_ctx->src.type == OprType::REGSTR) {
@@ -177,7 +177,7 @@ void track_mul(binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea) {
 
     NodePtr new_node = std::make_shared<Node>(
         src_node->value * dest_node->value, (NodePtrVec){src_node, dest_node},
-        transformation::MUL);
+        Transformation::MUL);
 
     stack::at(dest_idx, new_node); // this does not make sense. I could
                                    // just compute derivatives right here.
@@ -212,7 +212,7 @@ void track_div(binary_op::ctx *div_ctx, bool is_pop, bool is_reverse,
     }
 
     NodePtr new_node =
-        std::make_shared<Node>(value, operands, transformation::DIV);
+        std::make_shared<Node>(value, operands, Transformation::DIV);
     stack::push(new_node);
 
   } else if (div_ctx->src.type == OprType::REGSTR) {
@@ -235,7 +235,7 @@ void track_div(binary_op::ctx *div_ctx, bool is_pop, bool is_reverse,
     }
 
     NodePtr new_node =
-        std::make_shared<Node>(value, operands, transformation::DIV);
+        std::make_shared<Node>(value, operands, Transformation::DIV);
     stack::at(dest_idx, new_node);
 
     if (is_pop) {
@@ -268,7 +268,7 @@ void track_sub(binary_op::ctx *sub_ctx, bool is_pop, bool is_reverse,
     }
 
     NodePtr new_node =
-        std::make_shared<Node>(value, operands, transformation::SUB);
+        std::make_shared<Node>(value, operands, Transformation::SUB);
     stack::push(new_node);
 
   } else if (sub_ctx->src.type == OprType::REGSTR) {
@@ -291,7 +291,7 @@ void track_sub(binary_op::ctx *sub_ctx, bool is_pop, bool is_reverse,
     }
 
     NodePtr new_node =
-        std::make_shared<Node>(value, operands, transformation::SUB);
+        std::make_shared<Node>(value, operands, Transformation::SUB);
     stack::at(dest_idx, new_node);
 
     if (is_pop) {
@@ -305,7 +305,7 @@ void track_sub(binary_op::ctx *sub_ctx, bool is_pop, bool is_reverse,
 void track_sch() {
   NodePtr src_node = stack::pop();
   NodePtr new_node(
-      new Node(-1 * src_node->value, {src_node}, transformation::CHS));
+      new Node(-1 * src_node->value, {src_node}, Transformation::CHS));
   stack::push(new_node);
 }
 

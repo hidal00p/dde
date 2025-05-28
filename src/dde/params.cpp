@@ -17,8 +17,8 @@ VarMarkCtx var_marking_ctx;
 CallPair call_pair;
 
 const std::map<std::string, Intrinsic> intrinsic_routines = {
-    {"cos", {.intrinsic_call = std::cos, .transf = transformation::COS}},
-    {"sin", {.intrinsic_call = std::sin, .transf = transformation::SIN}}};
+    {"cos", {.intrinsic_call = std::cos, .transf = Transformation::COS}},
+    {"sin", {.intrinsic_call = std::sin, .transf = Transformation::SIN}}};
 
 bool rtn_is_valid_transform(std::string rtn) {
   if (rtn.empty())

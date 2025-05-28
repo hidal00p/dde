@@ -46,7 +46,7 @@ extern CallPair call_pair;
 typedef double (*IntrinsicCall)(double x);
 struct Intrinsic {
   IntrinsicCall intrinsic_call;
-  transformation transf;
+  Transformation transf;
 };
 
 bool rtn_is_valid_transform(std::string rtn);

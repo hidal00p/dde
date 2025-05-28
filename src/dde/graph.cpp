@@ -109,14 +109,14 @@ void show_node(NodePtr n, std::string prefix, uuid_list &visited) {
 
   graph_file << prefix << n->uuid << " " << n->value << " " << n->is_active;
 
-  std::string tr_str = n->tr == transformation::NONE  ? ""
-                       : n->tr == transformation::ADD ? "+"
-                       : n->tr == transformation::MUL ? "*"
-                       : n->tr == transformation::DIV ? "/"
-                       : n->tr == transformation::SUB ? "-"
-                       : n->tr == transformation::CHS ? "~"
-                       : n->tr == transformation::SIN ? "sin"
-                                                      : "cos";
+  std::string tr_str = n->transf == Transformation::ASSIGN ? ""
+                       : n->transf == Transformation::ADD  ? "+"
+                       : n->transf == Transformation::MUL  ? "*"
+                       : n->transf == Transformation::DIV  ? "/"
+                       : n->transf == Transformation::SUB  ? "-"
+                       : n->transf == Transformation::CHS  ? "~"
+                       : n->transf == Transformation::SIN  ? "sin"
+                                                           : "cos";
   graph_file << " " << tr_str << std::endl;
 
   if (is_visited(n->uuid, visited)) {

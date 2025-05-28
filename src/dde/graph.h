@@ -15,7 +15,7 @@
  *
  * NOTE: might want to wrap things into a shared_ptr
  */
-enum transformation { NONE, MUL, ADD, DIV, SUB, CHS, SIN, COS };
+enum Transformation { ASSIGN, MUL, ADD, DIV, SUB, CHS, SIN, COS };
 
 std::string get_uuid();
 
@@ -31,18 +31,18 @@ struct Node {
   double value;
 
   NodePtrVec operands;
-  transformation tr = transformation::NONE;
+  Transformation transf = Transformation::ASSIGN;
 
   Node(double val) {
     uuid = get_uuid();
     value = val;
   }
 
-  Node(double val, NodePtrVec oprs, transformation trn) {
+  Node(double val, NodePtrVec oprs, Transformation trn) {
     uuid = get_uuid();
     value = val;
     operands = oprs;
-    tr = trn;
+    transf = trn;
   }
 
   bool is_leaf();
