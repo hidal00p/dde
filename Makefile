@@ -32,4 +32,4 @@ clean:
 	@make -C $(TESTS_DIR) clean
 	rm -rf *.out
 
-.PHONY: clean-targets format targets tools tests
+.PHONY: format targets tools tests
