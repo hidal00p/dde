@@ -10,15 +10,15 @@ typedef union {
   uint64_t imm;
 } Origin;
 
-struct operand {
+struct Operand {
   Origin origin;
   OprType type;
 };
 
 namespace binary_op {
 struct ctx {
-  operand src;
-  operand dest;
+  Operand src;
+  Operand dest;
   INS ins;
 };
 
