@@ -5,7 +5,10 @@
 #include "params.h"
 
 #include <cassert>
-#define NDEBUG
+#define DEBUG
+#ifdef DEBUG
+#include <iostream>
+#endif
 
 bool is_abi_reg(REG reg) {
   bool xmm_reg = reg >= REG_XMM_BASE && reg <= REG_XMM_SSE_LAST;
@@ -315,6 +318,7 @@ void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
 
 #ifdef DEBUG
   std::cout << callee_name + " -> " + branch_name << std::endl;
+  std::cout << callee_addr << " -> " << branch_addr << std::endl;
 #endif
 
   if (!rtn_is_valid_transform(branch_name) &&
@@ -344,6 +348,7 @@ void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
 
 #ifdef DEBUG
   std::cout << callee_name + " -> " + branch_name << std::endl;
+  std::cout << callee_addr << " -> " << branch_addr << std::endl;
 #endif
 
   if (!rtn_is_valid_transform(branch_name) &&

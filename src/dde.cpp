@@ -108,8 +108,17 @@ INT32 usage() {
 void final_processing(INT32 code, VOID *v) {}
 
 void image(IMG img, void *v) {
+  std::cout << IMG_Name(img) << std::endl;
+
   if (!IMG_IsMainExecutable(img))
     return;
+
+  for(SYM sym = IMG_RegsymHead(img); SYM_Valid(sym); sym = SYM_Next(sym)) {
+    std::string name = SYM_Name(sym);
+    if(name.find("cos@plt") != std::string::npos) {
+      std::cout << "  " << SYM_Name(sym) << " @ " << SYM_Address(sym) << std::endl;
+    }
+  }
 
   for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec)) {
     std::string sec_name = SEC_Name(sec);
