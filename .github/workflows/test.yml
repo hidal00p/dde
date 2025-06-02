@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
+    - name: Build libs
+      run: make libs
     - name: Build tests
       run: make tests
     - name: Run tests
