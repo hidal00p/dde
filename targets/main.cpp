@@ -13,7 +13,7 @@ bool parse_args(int argc, char *argv[]);
 void newton(double);
 
 int main() {
-  std::vector<double> guesses = {-4.0, -2.0, 0.25, 4.12, 6.0, 10.0};
+  std::vector<double> guesses = {-3.48, -2.0, 0.25, 4.12, 6.0, 10.0};
 
   for (double &x0 : guesses)
     newton(x0);
@@ -25,7 +25,6 @@ void newton(double x0) {
 
   constexpr double TOL = 1e-6;
   constexpr uint8_t MAX_ITER = 20;
-  constexpr float pi = 3.14159265359;
 
   uint8_t i = 0;
   double eps = 10;
@@ -48,16 +47,16 @@ void newton(double x0) {
     // Newton update
     dde::dump_graph();
 
-    Graph gr(graph_path);
-    gr.backprop();
-    double df_dx = gr.parsed["x"]->der;
+    Graph dag(graph_path);
+    dag.eval_adjoints();
+    double df_dx = dag.nodes["x"]->der;
 
     x0 = x - f_x / df_dx;
     eps = std::abs(f_x);
 
   } while (++i < MAX_ITER && eps > TOL);
 
-  std::cout << "Solution: " << x0 << " = " << x0 / pi << " Pi" << std::endl;
+  std::cout << "Solution: " << x0 << " = " << x0 / M_PI << " Pi" << std::endl;
 }
 
 bool parse_args(int argc, char *argv[]) {

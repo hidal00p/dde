@@ -35,7 +35,7 @@ private:
 
 public:
   NodePtr root;
-  std::map<std::string, NodePtr> parsed;
+  std::map<std::string, NodePtr> nodes;
 
   Graph(std::string file_name);
 
@@ -43,7 +43,7 @@ public:
 
   void order_graph(NodePtr start_node);
 
-  void backprop();
+  void eval_adjoints();
 };
 
 #endif

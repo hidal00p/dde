@@ -122,8 +122,8 @@ NodePtr Graph::parse_node() {
 
   NodePtr n = std::make_shared<Node>(raw_repr);
 
-  if (parsed.count(n->uuid) > 0) {
-    return parsed[n->uuid];
+  if (nodes.count(n->uuid) > 0) {
+    return nodes[n->uuid];
   }
 
   if (n->bop) {
@@ -133,7 +133,7 @@ NodePtr Graph::parse_node() {
     n->parents.push_back(parse_node());
   }
 
-  parsed[n->uuid] = n;
+  nodes[n->uuid] = n;
   return n;
 }
 
@@ -151,7 +151,7 @@ void Graph::order_graph(NodePtr start_node) {
   topo.push_back(start_node);
 }
 
-void Graph::backprop() {
+void Graph::eval_adjoints() {
   order_graph(root);
   root->der = 1.0;
   for (auto node = topo.rbegin(); node != topo.rend(); node++) {
