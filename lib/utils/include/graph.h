@@ -5,8 +5,13 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <memory>
 
 #define NOP "\0"
+
+struct Node;
+using NodePtr = std::shared_ptr<Node>;
+using NodePtrVec = std::vector<NodePtr>;
 
 struct Node {
   std::string uuid;
@@ -14,7 +19,7 @@ struct Node {
   bool bop;
   double val;
   double der = 0.0;
-  std::vector<Node *> parents;
+  NodePtrVec parents;
 
   Node(std::string raw_repr);
 
@@ -25,18 +30,18 @@ struct Node {
 class Graph {
 private:
   std::ifstream graph_file;
-  std::vector<Node *> topo;
-  std::map<std::string, Node *> topo_visited;
+  std::vector<NodePtr> topo;
+  std::map<std::string, NodePtr> topo_visited;
 
 public:
-  Node *root;
-  std::map<std::string, Node *> parsed;
+  NodePtr root;
+  std::map<std::string, NodePtr> parsed;
 
   Graph(std::string file_name);
 
-  Node *parse_node();
+  NodePtr parse_node();
 
-  void order_graph(Node *start_node);
+  void order_graph(NodePtr start_node);
 
   void backprop();
 };

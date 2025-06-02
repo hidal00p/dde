@@ -68,8 +68,8 @@ void Node::differentiate() {
     return;
 
   if (bop) {
-    Node *rhs1 = parents[0];
-    Node *rhs2 = parents[1];
+    NodePtr rhs1 = parents[0];
+    NodePtr rhs2 = parents[1];
     if (op == "*") {
       rhs1->der += rhs2->val * der;
       rhs2->der += rhs1->val * der;
@@ -106,12 +106,12 @@ Graph::Graph(std::string file_name) {
   graph_file.close();
 }
 
-Node *Graph::parse_node() {
+NodePtr Graph::parse_node() {
   std::string raw_repr;
   if (!std::getline(graph_file, raw_repr))
     std::exit(-1);
 
-  Node *n = new Node(raw_repr);
+  NodePtr n = std::make_shared<Node>(raw_repr);
 
   if (parsed.count(n->uuid) > 0)
     return parsed[n->uuid];
@@ -127,7 +127,7 @@ Node *Graph::parse_node() {
   return n;
 }
 
-void Graph::order_graph(Node *start_node) {
+void Graph::order_graph(NodePtr start_node) {
   if (topo_visited.count(start_node->uuid) > 0)
     return;
 
