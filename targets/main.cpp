@@ -13,12 +13,27 @@ bool parse_args(int argc, char *argv[]);
 void newton(double);
 
 int main() {
-  std::vector<double> guesses = {-3.48, -2.0, 0.25, 4.12, 6.0, 10.0};
+  dde::start();
 
-  for (double &x0 : guesses)
-    newton(x0);
+  dde::var("x");
+  double x = M_PI / 4;
+  dde::endvar();
 
-  return 0;
+  dde::var("f_x", true);
+  double f_x = 0;
+  dde::endvar();
+
+  f_x = mylib::f_test(x);
+  dde::stop();
+
+  // Newton update
+  dde::dump_graph();
+  // std::vector<double> guesses = {-3.48, -2.0, 0.25, 3.2, 6.0, 10.0};
+
+  // for (double &x0 : guesses)
+  //   newton(x0);
+
+  // return 0;
 }
 
 void newton(double x0) {
