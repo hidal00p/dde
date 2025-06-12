@@ -51,18 +51,6 @@ struct Node {
 extern std::map<uint64_t, NodePtr> mem_map;
 extern std::map<uint8_t, NodePtr> reg_map;
 
-#define FPU_STACK_MAX_SIZE 8
-extern NodePtrVec fpu_stack;
-
-namespace stack {
-void push(NodePtr n);
-NodePtr pop();
-NodePtr at(uint8_t idx);
-void at(uint8_t idx, NodePtr n);
-NodePtr top();
-uint8_t size();
-} // namespace stack
-
 extern std::string graph_path;
 typedef std::vector<std::string> uuid_list;
 void show_node(NodePtr n);

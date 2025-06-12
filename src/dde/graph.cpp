@@ -11,7 +11,6 @@
 
 std::map<uint64_t, NodePtr> mem_map;
 std::map<uint8_t, NodePtr> reg_map;
-NodePtrVec fpu_stack;
 
 std::string get_uuid() {
   static const uint id_length = 7;
@@ -28,71 +27,6 @@ std::string get_uuid() {
 
   return uuid;
 }
-
-namespace stack {
-void push(NodePtr n) {
-#ifndef TEST_MODE
-  assert(fpu_stack.size() + 1 <= FPU_STACK_MAX_SIZE);
-#else
-  if (fpu_stack.size() + 1 > FPU_STACK_MAX_SIZE)
-    throw StackMisuseException(
-        "Wrong push to FPU stack. Stack is already full.");
-#endif
-  fpu_stack.push_back(n);
-}
-
-NodePtr pop() {
-#ifndef TEST_MODE
-  assert(fpu_stack.size() > 0);
-#else
-  if (fpu_stack.size() == 0)
-    throw StackMisuseException(
-        "Wrong pop from FPU stack. Empty stack - nothing to pop.");
-#endif
-
-  NodePtr n = fpu_stack.back();
-  fpu_stack.pop_back();
-
-  return n;
-}
-
-NodePtr at(uint8_t idx) {
-#ifndef TEST_MODE
-  assert(fpu_stack.size() > 0 && idx < fpu_stack.size());
-#else
-  if (fpu_stack.size() == 0)
-    throw StackMisuseException(
-        "Wrong access of FPU stack. Empty stack - nothing to access.");
-
-  if (idx >= fpu_stack.size())
-    throw StackMisuseException("Index is out of bound.");
-#endif
-
-  return fpu_stack[idx];
-}
-
-void at(uint8_t idx, NodePtr n) {
-#ifndef TEST_MODE
-  assert(fpu_stack.size() > 0 && idx < fpu_stack.size());
-#else
-  if (fpu_stack.size() == 0)
-    throw StackMisuseException(
-        "Wrong access of FPU stack. Empty stack - nothing to access.");
-
-  if (idx >= fpu_stack.size())
-    throw StackMisuseException("Index is out of bound.");
-#endif
-
-  fpu_stack[idx] = n;
-}
-
-NodePtr top() {
-  assert(fpu_stack.size() > 0);
-  return fpu_stack.back();
-}
-
-uint8_t size() { return fpu_stack.size(); }
-} // namespace stack
 
 bool is_visited(std::string uuid, uuid_list visited) {
   return std::find(visited.begin(), visited.end(), uuid) != visited.end();
