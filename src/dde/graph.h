@@ -68,6 +68,7 @@ void write_to_mem(uint64_t from_mem, uint64_t to_mem);
 
 namespace reg {
 void insert_node(uint64_t reg, NodePtr n);
+void clean_reg(uint64_t reg);
 bool is_node_recorded(uint64_t reg);
 std::optional<NodePtr> get_node(uint64_t reg);
 NodePtr expect_node(uint64_t reg);

@@ -68,8 +68,8 @@ void show_mem_map() {
   uuid_list visited;
 
   for (const auto &[addr, n] : mem_map) {
-    if (!n->is_leaf() || is_visited(n->uuid, visited))
-      continue;
+    // if (!n->is_leaf() || is_visited(n->uuid, visited))
+    //   continue;
 
     uuid_list visited_parents;
     show_node(n, "", visited_parents);
@@ -117,6 +117,8 @@ void write_to_mem(uint64_t from_mem, uint64_t to_mem) {
 
 namespace reg {
 void insert_node(uint64_t reg, NodePtr n) { reg_map[reg] = n; };
+
+void clean_reg(uint64_t reg) { reg_map.erase(reg); }
 
 bool is_node_recorded(uint64_t reg) { return reg_map.count(reg) > 0; }
 

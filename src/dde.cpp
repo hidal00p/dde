@@ -1,23 +1,44 @@
 #include "dde/graph.h"
 #include "dde/handlers.h"
 #include "dde/params.h"
+#include "dde/pin_utils.h"
 
 #include <cassert>
 #include <iostream>
 
+// VOID analysis(CONTEXT* ctx) {
+//   double val;
+//   PIN_GetContextRegval(ctx, REG_XMM0, (uint8_t *)&val);
+//   std::cout << val << std::endl;
+// }
+//
+// void instruction(INS ins, VOID *v) {
+//   if(!is_img_main(ins))
+//     return;
+//
+//   if(INS_Opcode(ins) == XED_ICLASS_MOVSD || INS_Opcode(ins) ==
+//   XED_ICLASS_MOVSD_XMM) {
+//     std::cout << INS_Disassemble(ins) << std::endl;
+//     if(INS_OperandIsReg(ins, 1)) {
+//       INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis, IARG_CONTEXT,
+//       IARG_END);
+//     }
+//   }
+// }
+
 VOID instruction(INS ins, VOID *v) {
-  if (INS_IsRet(ins) && !call_pair.empty()) {
-    instrumentation::handle_ret(ins);
-    return;
-  }
+  // if (INS_IsRet(ins) && !call_pair.empty()) {
+  //   instrumentation::handle_ret(ins);
+  //   return;
+  // }
 
   if (!dde_state.to_instrument)
     return;
 
-  if (INS_IsCall(ins)) {
-    instrumentation::handle_call(ins);
-    return;
-  }
+  // if (INS_IsCall(ins)) {
+  //   instrumentation::handle_call(ins);
+  //   return;
+  // }
 
   OPCODE opcode = INS_Opcode(ins);
   // Register read and write
@@ -28,70 +49,70 @@ VOID instruction(INS ins, VOID *v) {
   }
 
   // FPU stack read and write
-  if (opcode == XED_ICLASS_FLD || opcode == XED_ICLASS_FST) {
-    instrumentation::handle_fpu_mov(ins);
-    return;
-  } else if (opcode == XED_ICLASS_FSTP) {
-    instrumentation::handle_fpu_mov(ins, true);
-    return;
-  } else if (opcode == XED_ICLASS_FLDZ) {
-    instrumentation::handle_fpu_const_load(ins, 0);
-    return;
-  } else if (opcode == XED_ICLASS_FLD1) {
-    instrumentation::handle_fpu_const_load(ins, 1.0);
-    return;
-  }
+  // if (opcode == XED_ICLASS_FLD || opcode == XED_ICLASS_FST) {
+  //   instrumentation::handle_fpu_mov(ins);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FSTP) {
+  //   instrumentation::handle_fpu_mov(ins, true);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FLDZ) {
+  //   instrumentation::handle_fpu_const_load(ins, 0);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FLD1) {
+  //   instrumentation::handle_fpu_const_load(ins, 1.0);
+  //   return;
+  // }
 
-  // We anticipate all arithmetic to
-  // interact with the FPU stack.
-  if (opcode == XED_ICLASS_FCHS) {
-    instrumentation::handle_sign_change(ins);
-    return;
-  }
+  // // We anticipate all arithmetic to
+  // // interact with the FPU stack.
+  // if (opcode == XED_ICLASS_FCHS) {
+  //   instrumentation::handle_sign_change(ins);
+  //   return;
+  // }
 
-  if (opcode == XED_ICLASS_FMUL) {
-    instrumentation::handle_mul(ins);
-    return;
-  } else if (opcode == XED_ICLASS_FMULP) {
-    instrumentation::handle_mul(ins, true);
-    return;
-  }
+  // if (opcode == XED_ICLASS_FMUL) {
+  //   instrumentation::handle_mul(ins);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FMULP) {
+  //   instrumentation::handle_mul(ins, true);
+  //   return;
+  // }
 
-  if (opcode == XED_ICLASS_FADD) {
-    instrumentation::handle_add(ins);
-    return;
-  } else if (opcode == XED_ICLASS_FADDP) {
-    instrumentation::handle_add(ins, true);
-    return;
-  }
+  // if (opcode == XED_ICLASS_FADD) {
+  //   instrumentation::handle_add(ins);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FADDP) {
+  //   instrumentation::handle_add(ins, true);
+  //   return;
+  // }
 
-  if (opcode == XED_ICLASS_FDIV) {
-    instrumentation::handle_div(ins);
-    return;
-  } else if (opcode == XED_ICLASS_FDIVP) {
-    instrumentation::handle_div(ins, true);
-    return;
-  } else if (opcode == XED_ICLASS_FDIVR) {
-    instrumentation::handle_div(ins, false, true);
-    return;
-  } else if (opcode == XED_ICLASS_FDIVRP) {
-    instrumentation::handle_div(ins, true, true);
-    return;
-  }
+  // if (opcode == XED_ICLASS_FDIV) {
+  //   instrumentation::handle_div(ins);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FDIVP) {
+  //   instrumentation::handle_div(ins, true);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FDIVR) {
+  //   instrumentation::handle_div(ins, false, true);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FDIVRP) {
+  //   instrumentation::handle_div(ins, true, true);
+  //   return;
+  // }
 
-  if (opcode == XED_ICLASS_FSUB) {
-    instrumentation::handle_sub(ins);
-    return;
-  } else if (opcode == XED_ICLASS_FSUBP) {
-    instrumentation::handle_sub(ins, true);
-    return;
-  } else if (opcode == XED_ICLASS_FSUBR) {
-    instrumentation::handle_sub(ins, false, true);
-    return;
-  } else if (opcode == XED_ICLASS_FSUBRP) {
-    instrumentation::handle_sub(ins, true, true);
-    return;
-  }
+  // if (opcode == XED_ICLASS_FSUB) {
+  //   instrumentation::handle_sub(ins);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FSUBP) {
+  //   instrumentation::handle_sub(ins, true);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FSUBR) {
+  //   instrumentation::handle_sub(ins, false, true);
+  //   return;
+  // } else if (opcode == XED_ICLASS_FSUBRP) {
+  //   instrumentation::handle_sub(ins, true, true);
+  //   return;
+  // }
 }
 
 /* ===================================================================== */
@@ -107,25 +128,25 @@ INT32 usage() {
 
 void final_processing(INT32 code, VOID *v) {}
 
-void image(IMG img, void *v) {
-  if (!IMG_IsMainExecutable(img))
-    return;
-
-  for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec)) {
-    std::string sec_name = SEC_Name(sec);
-
-    if (sec_name == ".rodata") {
-      sec_info.rodata.start = SEC_Address(sec);
-      sec_info.rodata.end = sec_info.rodata.start + SEC_Size(sec);
-    }
-
-    if (sec_name == ".data") {
-      sec_info.data.start = SEC_Address(sec);
-      sec_info.data.end = sec_info.rodata.start + SEC_Size(sec);
-    }
-  }
-}
-
+// void image(IMG img, void *v) {
+//   if (!IMG_IsMainExecutable(img))
+//     return;
+//
+//   for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec)) {
+//     std::string sec_name = SEC_Name(sec);
+//
+//     if (sec_name == ".rodata") {
+//       sec_info.rodata.start = SEC_Address(sec);
+//       sec_info.rodata.end = sec_info.rodata.start + SEC_Size(sec);
+//     }
+//
+//     if (sec_name == ".data") {
+//       sec_info.data.start = SEC_Address(sec);
+//       sec_info.data.end = sec_info.rodata.start + SEC_Size(sec);
+//     }
+//   }
+// }
+//
 void dump_graph() {
   show_mem_map();
   clean_mem_map();
@@ -202,20 +223,20 @@ VOID routine(RTN rtn, VOID *v) {
 /*   argc, argv are the entire command line: pin -t <toolname> -- ...    */
 /* ===================================================================== */
 
-bool parse_args(int argc, char *argv[]) {
-  constexpr uint8_t pin_reserved_args = 7;
-
-  if (argc == pin_reserved_args)
-    return false;
-
-  if (argc > pin_reserved_args + 1)
-    return true;
-
-  std::string arg_path(argv[pin_reserved_args]);
-  graph_path = arg_path;
-
-  return false;
-}
+// bool parse_args(int argc, char *argv[]) {
+//   constexpr uint8_t pin_reserved_args = 7;
+//
+//   if (argc == pin_reserved_args)
+//     return false;
+//
+//   if (argc > pin_reserved_args + 1)
+//     return true;
+//
+//   std::string arg_path(argv[pin_reserved_args]);
+//   graph_path = arg_path;
+//
+//   return false;
+// }
 
 int main(int argc, char *argv[]) {
   // Initialize pin and symbols
@@ -225,7 +246,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Register Instruction to be called to instrument instructions
-  IMG_AddInstrumentFunction(image, 0);
+  // IMG_AddInstrumentFunction(image, 0);
   RTN_AddInstrumentFunction(routine, 0);
   INS_AddInstrumentFunction(instruction, 0);
   PIN_AddFiniFunction(final_processing, 0);
