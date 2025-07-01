@@ -12,7 +12,24 @@ void track_reg_mem(REG read_reg, ADDRINT write_ea);
 void track_reg_reg(REG read_reg, REG write_reg);
 void track_imm_reg(REG write_reg);
 } // namespace mov
-
+namespace binary {
+template <typename op>
+void track_mem_reg(CONTEXT *ctx, ADDRINT read_ea, REG write_reg);
+template <typename op>
+void track_reg_mem(CONTEXT *ctx, REG read_reg, ADDRINT write_ea);
+template <typename op>
+void track_reg_reg(CONTEXT *ctx, REG read_reg, REG write_reg);
+} // namespace binary
+namespace add {
+void track_mem_reg(CONTEXT *ctx, ADDRINT read_ea, REG write_reg);
+void track_reg_mem(CONTEXT *ctx, REG read_reg, ADDRINT write_ea);
+void track_reg_reg(CONTEXT *ctx, REG read_reg, REG write_reg);
+} // namespace add
+namespace mul {
+void track_mem_reg(CONTEXT *ctx, ADDRINT read_ea, REG write_reg);
+void track_reg_mem(CONTEXT *ctx, REG read_reg, ADDRINT write_ea);
+void track_reg_reg(CONTEXT *ctx, REG read_reg, REG write_reg);
+} // namespace mul
 // void track_add(binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea);
 //
 // void track_mul(binary_op::ctx *mul_ctx, bool is_pop, ADDRINT ea);
@@ -36,7 +53,10 @@ namespace instrumentation {
 // void handle_non_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
 //                            bool is_pop, bool is_reverse);
 
+template <typename op> void handle_binary(INS ins);
 void handle_mov(INS ins);
+void handle_add(INS ins);
+void handle_mul(INS ins);
 
 // void handle_fpu_mov(INS ins, bool is_pop = false);
 //

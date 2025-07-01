@@ -62,7 +62,24 @@ void show_node(NodePtr n, std::string prefix, uuid_list &visited) {
     visited.push_back(n->uuid);
   }
 }
+void show_node(NodePtr n, std::string prefix) {
 
+  std::cout << prefix << n->uuid << " " << n->value << " " << n->is_active;
+
+  std::string tr_str = n->transf == Transformation::ASSIGN ? ""
+                       : n->transf == Transformation::ADD  ? "+"
+                       : n->transf == Transformation::MUL  ? "*"
+                       : n->transf == Transformation::DIV  ? "/"
+                       : n->transf == Transformation::SUB  ? "-"
+                       : n->transf == Transformation::CHS  ? "~"
+                       : n->transf == Transformation::SIN  ? "sin"
+                                                           : "cos";
+  std::cout << " " << tr_str << std::endl;
+
+  for (auto &operand : n->operands) {
+    show_node(operand, prefix + " ");
+  }
+}
 void show_mem_map() {
   graph_file.open(graph_path);
   uuid_list visited;

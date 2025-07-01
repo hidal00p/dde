@@ -4,6 +4,7 @@
 #include "dde/pin_utils.h"
 
 #include <cassert>
+#include <functional>
 #include <iostream>
 
 // VOID analysis(CONTEXT* ctx) {
@@ -47,6 +48,16 @@ VOID instruction(INS ins, VOID *v) {
     instrumentation::handle_mov(ins);
     return;
   }
+
+  if (opcode == XED_ICLASS_ADDSD) {
+    instrumentation::handle_add(ins);
+    return;
+  }
+
+  if (opcode == XED_ICLASS_MULSD) {
+    instrumentation::handle_mul(ins);
+    return;
+  }
 }
 
 /* ===================================================================== */
@@ -60,7 +71,17 @@ INT32 usage() {
   return -1;
 }
 
-void final_processing(INT32 code, VOID *v) {}
+void final_processing(INT32 code, VOID *v) {
+  std::cout << "Mem state:" << std::endl;
+  for (const auto &[addr, n] : mem_map) {
+    show_node(n, "");
+  }
+
+  std::cout << std::endl << "Reg state:" << std::endl;
+  for (const auto &[addr, n] : reg_map) {
+    show_node(n, "");
+  }
+}
 
 // void image(IMG img, void *v) {
 //   if (!IMG_IsMainExecutable(img))

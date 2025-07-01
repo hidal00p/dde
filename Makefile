@@ -3,7 +3,7 @@ SRC_DIR := src
 LIB_DIR := lib
 TESTS_DIR := tests
 
-all: tools libs targets tests
+all: tools libs targets
 
 tools:
 	@echo "===== Making DDE main tool ====="

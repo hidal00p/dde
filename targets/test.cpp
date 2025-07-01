@@ -1,3 +1,5 @@
+#include "dde.h"
+double f(double x) { return x * x; }
 
 // int main() {
 //   double x = 42.0;
@@ -9,20 +11,18 @@
 //   z = f(z);
 // }
 
-#include "dde.h"
-
-double f(double x) { return x * x; }
-
 int main() {
   dde::start();
 
   dde::var("x");
-  double x = 42.42;
+  double x = 2.0;
   dde::endvar();
 
-  double y = x;
+  double z = 3.0;
 
-  double z = 32.32;
+  double y1 = x * x;
+  double y2 = x + z;
+  double y3 = y1 * y2;
 
   dde::stop();
 }
