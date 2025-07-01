@@ -7,23 +7,23 @@
 #include <iostream>
 
 VOID instruction(INS ins, VOID *v) {
-  // if (INS_IsRet(ins) && !call_pair.empty()) {
-  //   instrumentation::handle_ret(ins);
-  //   return;
-  // }
+  if (INS_IsRet(ins) && !call_pair.empty()) {
+    instrumentation::handle_ret(ins);
+    return;
+  }
 
   if (!dde_state.to_instrument)
     return;
 
-  // if (INS_IsCall(ins)) {
-  //   instrumentation::handle_call(ins);
-  //   return;
-  // }
+  if (INS_IsCall(ins)) {
+    instrumentation::handle_call(ins);
+    return;
+  }
 
   OPCODE opcode = INS_Opcode(ins);
   // Register read and write
   if (opcode == XED_ICLASS_MOVSD_XMM || opcode == XED_ICLASS_MOVSD ||
-      opcode == XED_ICLASS_MOV) {
+      opcode == XED_ICLASS_MOV || opcode == XED_ICLASS_MOVQ) {
     instrumentation::handle_mov(ins);
     return;
   }

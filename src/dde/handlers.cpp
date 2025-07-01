@@ -51,6 +51,56 @@ void track_reg_reg(REG read_reg, REG write_reg) {
 
 void track_imm_reg(REG write_reg) { reg::clean_reg(write_reg); }
 } // namespace mov
+namespace call {
+void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
+  std::string branch_name = RTN_FindNameByAddress(branch_addr);
+  std::string callee_name = RTN_FindNameByAddress(callee_addr);
+
+#ifdef DEBUG
+  std::cout << callee_name + " -> " + branch_name << std::endl;
+#endif
+
+  if (!rtn_is_valid_transform(branch_name) &&
+      !rtn_is_valid_transform(callee_name)) {
+    return;
+  }
+
+  call_pair.to = branch_name;
+  call_pair.from = callee_name;
+  dde_state.to_instrument = false;
+#ifndef DEBUG
+  // TODO: this is dangerous, what if nullopt
+  Intrinsic intr = get_intrinsic_from_rtn_name(branch_name).value();
+
+  NodePtr n = reg::expect_node(REG_XMM0);
+  NodePtr y = std::make_shared<Node>(intr.intrinsic_call(n->value),
+                                     (NodePtrVec){n}, intr.transf);
+
+  reg::insert_node(REG_XMM0, y);
+#endif
+}
+
+void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
+
+  std::string branch_name = RTN_FindNameByAddress(branch_addr);
+  std::string callee_name = RTN_FindNameByAddress(callee_addr);
+
+#ifdef DEBUG
+  std::cout << callee_name + " -> " + branch_name << std::endl;
+#endif
+
+  if (!rtn_is_valid_transform(branch_name) &&
+      !rtn_is_valid_transform(callee_name)) {
+    return;
+  }
+
+  if (call_pair.reversed(branch_name, callee_name)) {
+    call_pair.to.clear();
+    call_pair.from.clear();
+    dde_state.to_instrument = true;
+  }
+}
+} // namespace call
 } // namespace analysis
 
 #ifndef TEST_MODE
@@ -80,6 +130,21 @@ void handle_mov(INS ins) {
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::mov::track_imm_reg,
                    IARG_UINT32, mov_ctx->dest.origin.reg, IARG_END);
   }
+}
+
+void handle_call(INS ins) {
+  ADDRINT callee_addr = INS_Address(ins);
+  INS_InsertCall(ins, IPOINT_BEFORE,
+                 (AFUNPTR)analysis::call::track_call_to_intrinsic,
+                 IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, callee_addr, IARG_END);
+}
+
+void handle_ret(INS ins) {
+  ADDRINT callee_addr = INS_Address(ins);
+  INS_InsertCall(ins, IPOINT_BEFORE,
+                 (AFUNPTR)analysis::call::track_ret_from_intrinsic,
+                 IARG_BRANCH_TARGET_ADDR, IARG_ADDRINT, callee_addr, IARG_END);
+  return;
 }
 } // namespace instrumentation
 #endif

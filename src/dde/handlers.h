@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graph.h"
+#include "params.h"
 #include "pin.H"
 #include "transform_ctx.h"
 
@@ -113,6 +114,10 @@ void track_reg_reg(CONTEXT *ctx, REG read_reg, REG write_reg) {
   reg::insert_node(write_reg, res_node);
 }
 } // namespace binary
+namespace call {
+void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr);
+void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr);
+} // namespace call
 } // namespace analysis
 
 #ifndef TEST_MODE
@@ -144,5 +149,7 @@ void handle_binary(INS ins) {
   }
 }
 
+void handle_call(INS ins);
+void handle_ret(INS ins);
 } // namespace instrumentation
 #endif
