@@ -1,12 +1,17 @@
 #ifndef DDE_INSTRUMENTATION_H
 #define DDE_INSTRUMENTATION_H
 
-#include "transform_ctx.h"
+#include "pin.H"
 
 namespace analysis {
 // void track_fpu_mov(binary_op::ctx *mov_ctx, bool is_pop, ADDRINT ea);
-
-void track_reg_mov(binary_op::ctx *mov_ctx, ADDRINT ea);
+namespace mov {
+void track_marked_mem_reg(ADDRINT read_ea, REG write_reg);
+void track_mem_reg(ADDRINT read_ea, REG write_reg);
+void track_reg_mem(REG read_reg, ADDRINT write_ea);
+void track_reg_reg(REG read_reg, REG write_reg);
+void track_imm_reg(REG write_reg);
+} // namespace mov
 
 // void track_add(binary_op::ctx *add_ctx, bool is_pop, ADDRINT ea);
 //
@@ -25,13 +30,13 @@ void track_reg_mov(binary_op::ctx *mov_ctx, ADDRINT ea);
 
 #ifndef TEST_MODE
 namespace instrumentation {
-void handle_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
-                       bool is_pop);
+// void handle_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
+//                        bool is_pop);
+//
+// void handle_non_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
+//                            bool is_pop, bool is_reverse);
 
-void handle_non_commut_bop(INS ins, binary_op::ctx *bop_ctx, AFUNPTR func,
-                           bool is_pop, bool is_reverse);
-
-void handle_reg_mov(INS ins);
+void handle_mov(INS ins);
 
 // void handle_fpu_mov(INS ins, bool is_pop = false);
 //

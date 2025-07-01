@@ -12,11 +12,9 @@ ctx *get_bop_operands(INS ins) {
     bop_ctx->dest = {
         .type = OprType::MEM,
     };
-  } else if (INS_OperandIsReg(ins, DEST_IDX)) {
+  } else {
     bop_ctx->dest = {.origin = {.reg = INS_OperandReg(ins, DEST_IDX)},
                      .type = OprType::REGSTR};
-  } else {
-    assert(false);
   }
 
   if (INS_OperandIsImmediate(ins, SRC_IDX)) {
@@ -25,10 +23,8 @@ ctx *get_bop_operands(INS ins) {
   } else if (INS_OperandIsReg(ins, SRC_IDX)) {
     bop_ctx->src = {.origin = {.reg = INS_OperandReg(ins, SRC_IDX)},
                     .type = OprType::REGSTR};
-  } else if (INS_OperandIsMemory(ins, SRC_IDX)) {
-    bop_ctx->src = {.type = OprType::MEM};
   } else {
-    assert(false);
+    bop_ctx->src = {.type = OprType::MEM};
   }
 
   return bop_ctx;

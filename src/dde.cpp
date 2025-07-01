@@ -42,77 +42,11 @@ VOID instruction(INS ins, VOID *v) {
 
   OPCODE opcode = INS_Opcode(ins);
   // Register read and write
-  if (opcode == XED_ICLASS_MOVSD_XMM || opcode == XED_ICLASS_MOV ||
-      opcode == XED_ICLASS_MOVAPD || opcode == XED_ICLASS_MOVQ) {
-    instrumentation::handle_reg_mov(ins);
+  if (opcode == XED_ICLASS_MOVSD_XMM || opcode == XED_ICLASS_MOVSD ||
+      opcode == XED_ICLASS_MOV) {
+    instrumentation::handle_mov(ins);
     return;
   }
-
-  // FPU stack read and write
-  // if (opcode == XED_ICLASS_FLD || opcode == XED_ICLASS_FST) {
-  //   instrumentation::handle_fpu_mov(ins);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FSTP) {
-  //   instrumentation::handle_fpu_mov(ins, true);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FLDZ) {
-  //   instrumentation::handle_fpu_const_load(ins, 0);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FLD1) {
-  //   instrumentation::handle_fpu_const_load(ins, 1.0);
-  //   return;
-  // }
-
-  // // We anticipate all arithmetic to
-  // // interact with the FPU stack.
-  // if (opcode == XED_ICLASS_FCHS) {
-  //   instrumentation::handle_sign_change(ins);
-  //   return;
-  // }
-
-  // if (opcode == XED_ICLASS_FMUL) {
-  //   instrumentation::handle_mul(ins);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FMULP) {
-  //   instrumentation::handle_mul(ins, true);
-  //   return;
-  // }
-
-  // if (opcode == XED_ICLASS_FADD) {
-  //   instrumentation::handle_add(ins);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FADDP) {
-  //   instrumentation::handle_add(ins, true);
-  //   return;
-  // }
-
-  // if (opcode == XED_ICLASS_FDIV) {
-  //   instrumentation::handle_div(ins);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FDIVP) {
-  //   instrumentation::handle_div(ins, true);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FDIVR) {
-  //   instrumentation::handle_div(ins, false, true);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FDIVRP) {
-  //   instrumentation::handle_div(ins, true, true);
-  //   return;
-  // }
-
-  // if (opcode == XED_ICLASS_FSUB) {
-  //   instrumentation::handle_sub(ins);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FSUBP) {
-  //   instrumentation::handle_sub(ins, true);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FSUBR) {
-  //   instrumentation::handle_sub(ins, false, true);
-  //   return;
-  // } else if (opcode == XED_ICLASS_FSUBRP) {
-  //   instrumentation::handle_sub(ins, true, true);
-  //   return;
-  // }
 }
 
 /* ===================================================================== */
