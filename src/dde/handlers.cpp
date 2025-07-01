@@ -588,11 +588,11 @@ void handle_add(INS ins) {
                    IARG_CONTEXT, IARG_MEMORYREAD_EA, IARG_UINT32,
                    add_ctx->dest.origin.reg, IARG_END);
   } else if (add_ctx->dest.type == OprType::MEM) {
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::add::track_mem_reg,
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::add::track_reg_mem,
                    IARG_CONTEXT, IARG_UINT32, add_ctx->src.origin.reg,
                    IARG_MEMORYWRITE_EA, IARG_END);
   } else {
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::add::track_mem_reg,
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::add::track_reg_reg,
                    IARG_CONTEXT, IARG_UINT32, add_ctx->src.origin.reg,
                    IARG_UINT32, add_ctx->dest.origin.reg, IARG_END);
   }
@@ -606,16 +606,15 @@ void handle_mul(INS ins) {
                    IARG_CONTEXT, IARG_MEMORYREAD_EA, IARG_UINT32,
                    mul_ctx->dest.origin.reg, IARG_END);
   } else if (mul_ctx->dest.type == OprType::MEM) {
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::mul::track_mem_reg,
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::mul::track_reg_mem,
                    IARG_CONTEXT, IARG_UINT32, mul_ctx->src.origin.reg,
                    IARG_MEMORYWRITE_EA, IARG_END);
   } else {
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::mul::track_mem_reg,
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::mul::track_reg_reg,
                    IARG_CONTEXT, IARG_UINT32, mul_ctx->src.origin.reg,
                    IARG_UINT32, mul_ctx->dest.origin.reg, IARG_END);
   }
 }
-
 
 //
 // void handle_div(INS ins, bool is_pop, bool is_reverse) {
