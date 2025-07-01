@@ -1,31 +1,10 @@
 #include "dde/graph.h"
 #include "dde/handlers.h"
 #include "dde/params.h"
-#include "dde/pin_utils.h"
 
 #include <cassert>
 #include <functional>
 #include <iostream>
-
-// VOID analysis(CONTEXT* ctx) {
-//   double val;
-//   PIN_GetContextRegval(ctx, REG_XMM0, (uint8_t *)&val);
-//   std::cout << val << std::endl;
-// }
-//
-// void instruction(INS ins, VOID *v) {
-//   if(!is_img_main(ins))
-//     return;
-//
-//   if(INS_Opcode(ins) == XED_ICLASS_MOVSD || INS_Opcode(ins) ==
-//   XED_ICLASS_MOVSD_XMM) {
-//     std::cout << INS_Disassemble(ins) << std::endl;
-//     if(INS_OperandIsReg(ins, 1)) {
-//       INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis, IARG_CONTEXT,
-//       IARG_END);
-//     }
-//   }
-// }
 
 VOID instruction(INS ins, VOID *v) {
   // if (INS_IsRet(ins) && !call_pair.empty()) {
@@ -50,12 +29,25 @@ VOID instruction(INS ins, VOID *v) {
   }
 
   if (opcode == XED_ICLASS_ADDSD) {
-    instrumentation::handle_add(ins);
+    instrumentation::handle_binary<std::plus<double>, Transformation::ADD>(ins);
     return;
   }
 
   if (opcode == XED_ICLASS_MULSD) {
-    instrumentation::handle_mul(ins);
+    instrumentation::handle_binary<std::multiplies<double>,
+                                   Transformation::MUL>(ins);
+    return;
+  }
+
+  if (opcode == XED_ICLASS_SUBSD) {
+    instrumentation::handle_binary<std::minus<double>, Transformation::SUB>(
+        ins);
+    return;
+  }
+
+  if (opcode == XED_ICLASS_DIVSD) {
+    instrumentation::handle_binary<std::divides<double>, Transformation::DIV>(
+        ins);
     return;
   }
 }
@@ -83,25 +75,6 @@ void final_processing(INT32 code, VOID *v) {
   }
 }
 
-// void image(IMG img, void *v) {
-//   if (!IMG_IsMainExecutable(img))
-//     return;
-//
-//   for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec)) {
-//     std::string sec_name = SEC_Name(sec);
-//
-//     if (sec_name == ".rodata") {
-//       sec_info.rodata.start = SEC_Address(sec);
-//       sec_info.rodata.end = sec_info.rodata.start + SEC_Size(sec);
-//     }
-//
-//     if (sec_name == ".data") {
-//       sec_info.data.start = SEC_Address(sec);
-//       sec_info.data.end = sec_info.rodata.start + SEC_Size(sec);
-//     }
-//   }
-// }
-//
 void dump_graph() {
   show_mem_map();
   clean_mem_map();

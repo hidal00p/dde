@@ -18,11 +18,13 @@ int main() {
   double x = 2.0;
   dde::endvar();
 
-  double z = 3.0;
+  double y = 2.0;
 
-  double y1 = x * x;
-  double y2 = x + z;
-  double y3 = y1 * y2;
+  for (int i = 0; i < 3; i++)
+    x *= y;
+
+  double z = 4.0;
+  double y1 = (x / z) - z;
 
   dde::stop();
 }
