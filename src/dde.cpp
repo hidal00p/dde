@@ -151,35 +151,16 @@ VOID routine(RTN rtn, VOID *v) {
 /*   argc, argv are the entire command line: pin -t <toolname> -- ...    */
 /* ===================================================================== */
 
-// bool parse_args(int argc, char *argv[]) {
-//   constexpr uint8_t pin_reserved_args = 7;
-//
-//   if (argc == pin_reserved_args)
-//     return false;
-//
-//   if (argc > pin_reserved_args + 1)
-//     return true;
-//
-//   std::string arg_path(argv[pin_reserved_args]);
-//   graph_path = arg_path;
-//
-//   return false;
-// }
-
 int main(int argc, char *argv[]) {
-  // Initialize pin and symbols
   PIN_InitSymbols();
   if (PIN_Init(argc, argv)) {
     return usage();
   }
 
-  // Register Instruction to be called to instrument instructions
-  // IMG_AddInstrumentFunction(image, 0);
   RTN_AddInstrumentFunction(routine, 0);
   INS_AddInstrumentFunction(instruction, 0);
   PIN_AddFiniFunction(final_processing, 0);
 
-  // Start the program, never returns
   PIN_StartProgram();
 
   return 0;

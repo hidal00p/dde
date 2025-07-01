@@ -4,20 +4,6 @@
 #include <map>
 #include <optional>
 
-struct DataRegion {
-  uint64_t start;
-  uint64_t end;
-
-  bool within_range(uint64_t ea);
-};
-
-struct Sections {
-  DataRegion data;
-  DataRegion rodata;
-};
-
-extern Sections sec_info;
-
 struct DdeState {
   bool to_instrument = false;
 };

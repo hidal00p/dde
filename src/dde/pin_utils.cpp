@@ -1,15 +1,6 @@
 #include "pin_utils.h"
 #include <iostream>
 
-bool is_fpu_stack_reg(REG reg) {
-  return reg >= REG_ST_BASE && reg <= REG_ST_LAST;
-}
-
-uint8_t get_fpu_stack_idx_from_st(REG st) {
-  assert(is_fpu_stack_reg(st));
-  return st - REG_ST_BASE;
-}
-
 bool is_img_main(RTN rtn) {
   if (!RTN_Valid(rtn))
     return false;

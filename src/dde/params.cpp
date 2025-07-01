@@ -1,17 +1,12 @@
 #include "params.h"
 #include <cmath>
 
-bool DataRegion::within_range(uint64_t ea) {
-  return ea >= this->start && ea <= this->end;
-}
-
 bool CallPair::reversed(std::string new_to, std::string new_from) {
   return new_to == from && new_from == to;
 }
 
 bool CallPair::empty() { return to.empty() && from.empty(); }
 
-Sections sec_info = {.data = {}, .rodata = {}};
 DdeState dde_state;
 VarMarkCtx var_marking_ctx;
 CallPair call_pair;

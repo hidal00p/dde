@@ -5,7 +5,6 @@
 #include "transform_ctx.h"
 
 namespace analysis {
-// void track_fpu_mov(binary_op::ctx *mov_ctx, bool is_pop, ADDRINT ea);
 namespace mov {
 void track_marked_mem_reg(ADDRINT read_ea, REG write_reg);
 void track_mem_reg(ADDRINT read_ea, REG write_reg);
