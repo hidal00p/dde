@@ -1,5 +1,4 @@
-#ifndef GRAPH_UTILS_H
-#define GRAPH_UTILS_H
+#pragma once
 
 #include <map>
 #include <memory>
@@ -75,5 +74,3 @@ NodePtr expect_node(uint64_t reg);
 void write_to_mem(uint64_t from_reg, uint64_t to_mem);
 void write_to_other_reg(uint64_t from_reg, uint64_t to_reg);
 } // namespace reg
-
-#endif

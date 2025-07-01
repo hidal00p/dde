@@ -1,5 +1,4 @@
-#ifndef DDE_PARAMS_H
-#define DDE_PARAMS_H
+#pragma once
 
 #include "graph.h"
 #include <map>
@@ -52,5 +51,3 @@ struct Intrinsic {
 bool rtn_is_valid_transform(std::string rtn);
 std::optional<Intrinsic> get_intrinsic_from_rtn_name(std::string rtn);
 extern const std::map<std::string, Intrinsic> intrinsic_routines;
-
-#endif

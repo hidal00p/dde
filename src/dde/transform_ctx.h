@@ -1,6 +1,4 @@
-#ifndef TRANSFORM_CTX_H
-#define TRANSFORM_CTX_H
-
+#pragma once
 #include "pin.H"
 
 enum OprType { IMM, REGSTR, MEM };
@@ -24,4 +22,3 @@ struct ctx {
 
 ctx *get_bop_operands(INS ins);
 } // namespace binary_op
-#endif
