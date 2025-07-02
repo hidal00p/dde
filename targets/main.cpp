@@ -17,7 +17,10 @@ int main() {
   std::vector<double> guesses = {-3.48, -2.0, 0.25, 3.0, 6.0, 10.0};
 
   for (double &x0 : guesses)
-    newton(x0, mylib::f);
+    newton(x0, mylib::f1);
+
+  for (double &x0 : guesses)
+    newton(x0, mylib::f2);
 
   return 0;
 }

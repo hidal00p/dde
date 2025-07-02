@@ -2,8 +2,8 @@
 #define MYLIB_H
 
 namespace mylib {
-double f(double x);
-double f_test(double x);
+double f1(double x);
+double f2(double x);
 } // namespace mylib
 
 #endif

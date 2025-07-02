@@ -6,9 +6,9 @@ double g(double x) { return (x - 1.345); }
 
 double p(double x) { return (x + 4); }
 
-double f(double x) { return std::cos(x) * g(x) * p(x); }
+double f1(double x) { return std::cos(x) * g(x) * p(x); }
 
-double f_test(double x) {
+double f2(double x) {
 
   double y = 0.0;
 
