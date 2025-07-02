@@ -48,7 +48,7 @@ def analyze(stats_path: pl.Path):
     table = []
     for stats_pair in comparison_data.values():
         raw, dde = stats_pair[0], stats_pair[1]
-        overhead = round(dde[2] / raw[2], 4)
+        overhead = round(dde[3] / raw[3], 4)
         table.append([raw[0]] + raw[1:] + ["-"])
         table.append([dde[0]] + dde[1:] + [overhead])
 
