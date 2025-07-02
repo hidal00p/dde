@@ -1,4 +1,4 @@
-TARGETS = main.exe test.exe
+TARGETS = main.exe
 OBJS = mylib.o
 
 # -fno-plt     - use absolute references for dynamically linked libraries
