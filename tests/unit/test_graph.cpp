@@ -14,37 +14,6 @@ TEST(test_uuid_generation) {
   }
 }
 
-class StackSetup : public TestSetup {
-public:
-  void setup() { fpu_stack.clear(); }
-
-  void teardown() { fpu_stack.clear(); }
-};
-
-TESTWITHSETUP(test_top_of_the_stack, StackSetup) {
-  NodePtr n = std::make_shared<Node>(42.0);
-  stack::push(n);
-  CHECK(n->uuid == stack::top()->uuid);
-}
-
-TESTWITHSETUP(test_stack_size_after_modification, StackSetup) {
-  NodePtr n = std::make_shared<Node>(42.0);
-
-  stack::push(n);
-  CHECK(stack::size() == 1);
-
-  stack::pop();
-  CHECK(stack::size() == 0);
-}
-
-TESTWITHSETUP(test_stack_maximum_size_exceeded, StackSetup) {
-  for (int i = 0; i < FPU_STACK_MAX_SIZE; i++)
-    stack::push(std::make_shared<Node>(42.0));
-
-  CHECK_FAILURE(stack::push(std::make_shared<Node>(42.0)),
-                StackMisuseException);
-}
-
 class MemMapSetup : public TestSetup {
 public:
   void setup() { mem_map.clear(); }

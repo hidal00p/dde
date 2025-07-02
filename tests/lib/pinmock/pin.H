@@ -1168,4 +1168,7 @@ typedef enum {
   EMPTY = 42
 } RtnName;
 
+struct CONTEXT {};
+void PIN_GetContextRegval(CONTEXT *, REG, uint8_t *);
+
 #endif

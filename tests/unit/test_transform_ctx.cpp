@@ -1,5 +1,4 @@
 #include "cppunitlite/TestHarness.h"
-
 #include "pin.H"
 #include "transform_ctx.h"
 

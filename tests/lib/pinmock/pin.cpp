@@ -53,3 +53,4 @@ std::string RTN_FindNameByAddress(ADDRINT rtn_addr) {
 
   return routines[rtn_addr];
 }
+void PIN_GetContextRegval(CONTEXT *ctx, REG reg, uint8_t *addr) {}
