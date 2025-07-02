@@ -12,6 +12,37 @@
 std::map<uint64_t, NodePtr> mem_map;
 std::map<uint8_t, NodePtr> reg_map;
 
+std::string get_transf_text(Transformation tr) {
+  std::string tr_str;
+  switch (tr) {
+  case Transformation::ASSIGN:
+    tr_str = "";
+    break;
+  case Transformation::MUL:
+    tr_str = "*";
+    break;
+  case Transformation::ADD:
+    tr_str = "+";
+    break;
+  case Transformation::DIV:
+    tr_str = "/";
+    break;
+  case Transformation::SUB:
+    tr_str = "-";
+    break;
+  case Transformation::CHS:
+    tr_str = "~";
+    break;
+  case Transformation::SIN:
+    tr_str = "sin";
+    break;
+  case Transformation::COS:
+    tr_str = "cos";
+    break;
+  }
+  return tr_str;
+}
+
 std::string get_uuid() {
   static const uint id_length = 7;
   static const std::string alphabet = "aAbBcCdDeEfFgGhHiIjJ0123456789-+=";
@@ -43,14 +74,7 @@ void show_node(NodePtr n, std::string prefix, uuid_list &visited) {
 
   graph_file << prefix << n->uuid << " " << n->value << " " << n->is_active;
 
-  std::string tr_str = n->transf == Transformation::ASSIGN ? ""
-                       : n->transf == Transformation::ADD  ? "+"
-                       : n->transf == Transformation::MUL  ? "*"
-                       : n->transf == Transformation::DIV  ? "/"
-                       : n->transf == Transformation::SUB  ? "-"
-                       : n->transf == Transformation::CHS  ? "~"
-                       : n->transf == Transformation::SIN  ? "sin"
-                                                           : "cos";
+  std::string tr_str = get_transf_text(n->transf);
   graph_file << " " << tr_str << std::endl;
 
   if (is_visited(n->uuid, visited)) {

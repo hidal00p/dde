@@ -3,7 +3,7 @@ SRC_DIR := src
 LIB_DIR := lib
 TESTS_DIR := tests
 
-all: tools libs targets
+all: tools targets tests
 
 tools:
 	@echo "===== Making DDE main tool ====="
@@ -15,12 +15,12 @@ libs:
 	@make -C $(LIB_DIR)/utils
 	@echo
 
-targets:
+targets: libs
 	@echo "===== Making demo target ====="
 	@make -C $(TARGETS_DIR)
 	@echo
 
-tests:
+tests: libs
 	@echo "===== Making tests ====="
 	@make -C $(TESTS_DIR)
 	@echo 

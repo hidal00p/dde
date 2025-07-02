@@ -6,16 +6,8 @@
 #include <string>
 #include <vector>
 
-/*
- * Using the following two maps we attempt to resolve
- * every memory initialization with a value.
- *
- * We also keep track of final memory values.
- *
- * NOTE: might want to wrap things into a shared_ptr
- */
 enum Transformation { ASSIGN, MUL, ADD, DIV, SUB, CHS, SIN, COS };
-
+std::string get_transf_text(Transformation tr);
 std::string get_uuid();
 
 struct Node;
