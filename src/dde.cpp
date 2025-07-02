@@ -23,7 +23,8 @@ VOID instruction(INS ins, VOID *v) {
   OPCODE opcode = INS_Opcode(ins);
   // Register read and write
   if (opcode == XED_ICLASS_MOVSD_XMM || opcode == XED_ICLASS_MOVSD ||
-      opcode == XED_ICLASS_MOV || opcode == XED_ICLASS_MOVQ) {
+      opcode == XED_ICLASS_MOV || opcode == XED_ICLASS_MOVQ ||
+      opcode == XED_ICLASS_MOVAPD) {
     instrumentation::handle_mov(ins);
     return;
   }
@@ -69,15 +70,15 @@ INT32 usage() {
 }
 
 void final_processing(INT32 code, VOID *v) {
-  std::cout << "Mem state:" << std::endl;
-  for (const auto &[addr, n] : mem_map) {
-    show_node(n, "");
-  }
+  // std::cout << "Mem state:" << std::endl;
+  // for (const auto &[addr, n] : mem_map) {
+  //   show_node(n, "");
+  // }
 
-  std::cout << std::endl << "Reg state:" << std::endl;
-  for (const auto &[addr, n] : reg_map) {
-    show_node(n, "");
-  }
+  // std::cout << std::endl << "Reg state:" << std::endl;
+  // for (const auto &[addr, n] : reg_map) {
+  //   show_node(n, "");
+  // }
 }
 
 void dump_graph() {

@@ -45,6 +45,16 @@ void track_reg_mem(REG read_reg, ADDRINT write_ea) {
   if (!reg::is_node_recorded(read_reg)) {
     return;
   }
+
+  if (mem::is_node_recorded(write_ea)) {
+    NodePtr output_candidate = mem::expect_node(write_ea);
+    if (output_candidate->output) {
+      NodePtr transfer_node = reg::expect_node(read_reg);
+      transfer_node->uuid = output_candidate->uuid;
+      transfer_node->output = true;
+    }
+  }
+
   reg::write_to_mem(read_reg, write_ea);
 }
 void track_reg_reg(REG read_reg, REG write_reg) {

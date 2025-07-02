@@ -85,8 +85,8 @@ void show_mem_map() {
   uuid_list visited;
 
   for (const auto &[addr, n] : mem_map) {
-    // if (!n->is_leaf() || is_visited(n->uuid, visited))
-    //   continue;
+    if (!n->is_leaf() || is_visited(n->uuid, visited))
+      continue;
 
     uuid_list visited_parents;
     show_node(n, "", visited_parents);
