@@ -50,6 +50,11 @@ VOID instruction(INS ins, VOID *v) {
         ins);
     return;
   }
+
+  if (INS_OperandCount(ins) == 2 && INS_OperandIsReg(ins, DEST_IDX)) {
+    instrumentation::handle_clear_reg(ins);
+    return;
+  }
 }
 
 /* ===================================================================== */

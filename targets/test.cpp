@@ -1,16 +1,6 @@
 #include "dde.h"
 double f(double x) { return x * x; }
 
-// int main() {
-//   double x = 42.0;
-//   double y = 12.0;
-//
-//   double z = x + y;
-//   z = x * y / y;
-//
-//   z = f(z);
-// }
-
 int main() {
   dde::start();
 
@@ -18,13 +8,12 @@ int main() {
   double x = 2.0;
   dde::endvar();
 
-  double y = 2.0;
+  dde::var("y", true);
+  double y = 0.0;
+  dde::endvar();
 
-  for (int i = 0; i < 3; i++)
-    x *= y;
-
-  double z = 4.0;
-  double y1 = (x / z) - z;
+  double z = 2.0;
+  double y1 = (f(x) / z) - y;
 
   dde::stop();
 }

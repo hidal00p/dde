@@ -1,6 +1,7 @@
 #pragma once
 #include "pin.H"
 
+constexpr uint8_t SRC_IDX = 1, DEST_IDX = 0;
 enum OprType { IMM, REGSTR, MEM };
 
 typedef union {

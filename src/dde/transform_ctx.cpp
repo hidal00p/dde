@@ -4,7 +4,6 @@
 
 namespace binary_op {
 ctx *get_bop_operands(INS ins) {
-  constexpr uint8_t SRC_IDX = 1, DEST_IDX = 0;
   ctx *bop_ctx = new ctx();
   bop_ctx->ins = ins;
 

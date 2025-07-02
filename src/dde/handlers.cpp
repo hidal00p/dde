@@ -8,12 +8,6 @@
 #include <cassert>
 #define NDEBUG
 
-bool is_abi_reg(REG reg) {
-  bool xmm_reg = reg >= REG_XMM_BASE && reg <= REG_XMM_SSE_LAST;
-  bool rax_reg = reg == REG_RAX;
-  return xmm_reg || rax_reg;
-}
-
 namespace analysis {
 namespace mov {
 void track_marked_mem_reg(ADDRINT read_ea, REG write_reg) {
@@ -25,6 +19,19 @@ void track_marked_mem_reg(ADDRINT read_ea, REG write_reg) {
   node->output = var_marking_ctx.output;
 
   reg::insert_node(write_reg, node);
+}
+void track_marked_reg_mem(CONTEXT *ctx, REG read_reg, ADDRINT write_ea) {
+  if (reg::is_node_recorded(read_reg)) {
+    reg::write_to_mem(read_reg, write_ea);
+    return;
+  }
+
+  double value;
+  PIN_GetContextRegval(ctx, read_reg, (uint8_t *)&value);
+  NodePtr node = std::make_shared<Node>(value);
+  node->uuid = var_marking_ctx.mark;
+  node->output = var_marking_ctx.output;
+  mem::insert_node(write_ea, node);
 }
 void track_mem_reg(ADDRINT read_ea, REG write_reg) {
   if (!mem::is_node_recorded(read_ea)) {
@@ -72,11 +79,12 @@ void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
   // TODO: this is dangerous, what if nullopt
   Intrinsic intr = get_intrinsic_from_rtn_name(branch_name).value();
 
-  NodePtr n = reg::expect_node(REG_XMM0);
-  NodePtr y = std::make_shared<Node>(intr.intrinsic_call(n->value),
-                                     (NodePtrVec){n}, intr.transf);
+  NodePtr arg_node = reg::expect_node(REG_XMM0);
+  NodePtr res_node =
+      std::make_shared<Node>(intr.intrinsic_call(arg_node->value),
+                             (NodePtrVec){arg_node}, intr.transf);
 
-  reg::insert_node(REG_XMM0, y);
+  reg::insert_node(REG_XMM0, res_node);
 #endif
 }
 
@@ -105,7 +113,10 @@ void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
 
 #ifndef TEST_MODE
 namespace instrumentation {
-
+void handle_clear_reg(INS ins) {
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)reg::clean_reg, IARG_UINT32,
+                 INS_OperandReg(ins, 0), IARG_END);
+}
 void handle_mov(INS ins) {
   binary_op::ctx *mov_ctx = binary_op::get_bop_operands(ins);
 
@@ -113,6 +124,12 @@ void handle_mov(INS ins) {
     INS_InsertCall(
         ins, IPOINT_BEFORE, (AFUNPTR)analysis::mov::track_marked_mem_reg,
         IARG_MEMORYREAD_EA, IARG_UINT32, mov_ctx->dest.origin.reg, IARG_END);
+  } else if (var_marking_ctx.is_var_marked &&
+             mov_ctx->dest.type == OprType::MEM) {
+    INS_InsertCall(ins, IPOINT_BEFORE,
+                   (AFUNPTR)analysis::mov::track_marked_reg_mem, IARG_CONTEXT,
+                   IARG_UINT32, mov_ctx->src.origin.reg, IARG_MEMORYWRITE_EA,
+                   IARG_END);
   } else if (mov_ctx->src.type == OprType::MEM) {
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::mov::track_mem_reg,
                    IARG_MEMORYREAD_EA, IARG_UINT32, mov_ctx->dest.origin.reg,

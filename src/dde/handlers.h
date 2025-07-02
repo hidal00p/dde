@@ -1,13 +1,13 @@
 #pragma once
 
 #include "graph.h"
-#include "params.h"
 #include "pin.H"
 #include "transform_ctx.h"
 
 namespace analysis {
 namespace mov {
 void track_marked_mem_reg(ADDRINT read_ea, REG write_reg);
+void track_marked_reg_mem(CONTEXT *ctx, REG read_reg, ADDRINT write_ea);
 void track_mem_reg(ADDRINT read_ea, REG write_reg);
 void track_reg_mem(REG read_reg, ADDRINT write_ea);
 void track_reg_reg(REG read_reg, REG write_reg);
@@ -122,7 +122,7 @@ void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr);
 
 #ifndef TEST_MODE
 namespace instrumentation {
-
+void handle_clear_reg(INS ins);
 void handle_mov(INS ins);
 template <typename Operation, Transformation Transform>
 void handle_binary(INS ins) {
