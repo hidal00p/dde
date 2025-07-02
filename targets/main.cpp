@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+#include <functional>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -10,18 +11,18 @@
 
 std::string graph_path("/tmp/prog.gr");
 bool parse_args(int argc, char *argv[]);
-void newton(double);
+void newton(double, std::function<double(double)> f);
 
 int main() {
   std::vector<double> guesses = {-3.48, -2.0, 0.25, 3.0, 6.0, 10.0};
 
   for (double &x0 : guesses)
-    newton(x0);
+    newton(x0, mylib::f);
 
   return 0;
 }
 
-void newton(double x0) {
+void newton(double x0, std::function<double(double)> f) {
 
   constexpr double TOL = 1e-6;
   constexpr uint8_t MAX_ITER = 20;
@@ -42,7 +43,7 @@ void newton(double x0) {
     double f_x = 0;
     dde::endvar();
 
-    f_x = mylib::f(x);
+    f_x = f(x);
     dde::stop();
 
     // Newton update
