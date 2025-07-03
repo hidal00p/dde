@@ -6,8 +6,6 @@
 
 namespace analysis {
 namespace mov {
-void track_marked_mem_reg(ADDRINT read_ea, REG write_reg);
-void track_marked_reg_mem(CONTEXT *ctx, REG read_reg, ADDRINT write_ea);
 void track_mem_reg(ADDRINT read_ea, REG write_reg);
 void track_reg_mem(REG read_reg, ADDRINT write_ea);
 void track_reg_reg(REG read_reg, REG write_reg);

@@ -10,29 +10,6 @@
 
 namespace analysis {
 namespace mov {
-void track_marked_mem_reg(ADDRINT read_ea, REG write_reg) {
-  double value;
-  PIN_SafeCopy((void *)&value, (void *)read_ea, sizeof(value));
-
-  NodePtr node = std::make_shared<Node>(value);
-  node->uuid = var_marking_ctx.mark;
-  node->output = var_marking_ctx.output;
-
-  reg::insert_node(write_reg, node);
-}
-void track_marked_reg_mem(CONTEXT *ctx, REG read_reg, ADDRINT write_ea) {
-  if (reg::is_node_recorded(read_reg)) {
-    reg::write_to_mem(read_reg, write_ea);
-    return;
-  }
-
-  double value;
-  PIN_GetContextRegval(ctx, read_reg, (uint8_t *)&value);
-  NodePtr node = std::make_shared<Node>(value);
-  node->uuid = var_marking_ctx.mark;
-  node->output = var_marking_ctx.output;
-  mem::insert_node(write_ea, node);
-}
 void track_mem_reg(ADDRINT read_ea, REG write_reg) {
   if (!mem::is_node_recorded(read_ea)) {
     reg::clean_reg(write_reg);
@@ -128,17 +105,7 @@ void handle_clear_reg(INS ins) {
 void handle_mov(INS ins) {
   binary_op::ctx *mov_ctx = binary_op::get_bop_operands(ins);
 
-  if (var_marking_ctx.is_var_marked && mov_ctx->src.type == OprType::MEM) {
-    INS_InsertCall(
-        ins, IPOINT_BEFORE, (AFUNPTR)analysis::mov::track_marked_mem_reg,
-        IARG_MEMORYREAD_EA, IARG_UINT32, mov_ctx->dest.origin.reg, IARG_END);
-  } else if (var_marking_ctx.is_var_marked &&
-             mov_ctx->dest.type == OprType::MEM) {
-    INS_InsertCall(ins, IPOINT_BEFORE,
-                   (AFUNPTR)analysis::mov::track_marked_reg_mem, IARG_CONTEXT,
-                   IARG_UINT32, mov_ctx->src.origin.reg, IARG_MEMORYWRITE_EA,
-                   IARG_END);
-  } else if (mov_ctx->src.type == OprType::MEM) {
+  if (mov_ctx->src.type == OprType::MEM) {
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::mov::track_mem_reg,
                    IARG_MEMORYREAD_EA, IARG_UINT32, mov_ctx->dest.origin.reg,
                    IARG_END);

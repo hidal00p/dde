@@ -8,7 +8,6 @@ bool CallPair::reversed(std::string new_to, std::string new_from) {
 bool CallPair::empty() { return to.empty() && from.empty(); }
 
 DdeState dde_state;
-VarMarkCtx var_marking_ctx;
 CallPair call_pair;
 
 const std::map<std::string, Intrinsic> intrinsic_routines = {

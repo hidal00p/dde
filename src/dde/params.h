@@ -10,14 +10,6 @@ struct DdeState {
 
 extern DdeState dde_state;
 
-struct VarMarkCtx {
-  bool is_var_marked = false;
-  bool output = false;
-  std::string mark;
-};
-
-extern VarMarkCtx var_marking_ctx;
-
 struct CallPair {
   std::string to;
   std::string from;
