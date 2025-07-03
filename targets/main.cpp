@@ -36,17 +36,13 @@ void newton(double x0, std::function<double(double)> f) {
   std::cout << "Guess: " << x0 << " = " << x0 / M_PI << " Pi" << std::endl;
   do {
     // Forward step
-    dde::start();
-
-    dde::var("x");
     double x = x0;
-    dde::endvar();
 
-    dde::var("f_x", true);
-    double f_x = 0;
-    dde::endvar();
+    dde::start();
+    dde::var(&x, "x");
 
-    f_x = f(x);
+    double f_x = f(x);
+    dde::output(&f_x, "f_x");
     dde::stop();
 
     // Newton update

@@ -1,12 +1,9 @@
-#ifndef DDE_H
-#define DDE_H
+#pragma once
 
 namespace dde {
 static void start(){};
 static void stop(){};
-static void var(const char *mark, bool output = false){};
-static void endvar(){};
+static void var(double* var_addr, const char *mark, int ordinal = -1){};
+static void output(double* var_addr, const char *mark){};
 static void dump_graph(){};
 } // namespace dde
-
-#endif

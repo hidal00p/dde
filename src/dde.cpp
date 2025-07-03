@@ -70,15 +70,15 @@ INT32 usage() {
 }
 
 void final_processing(INT32 code, VOID *v) {
-  // std::cout << "Mem state:" << std::endl;
-  // for (const auto &[addr, n] : mem_map) {
-  //   show_node(n, "");
-  // }
+  std::cout << "Mem state:" << std::endl;
+  for (const auto &[addr, n] : mem_map) {
+    show_node(n, "");
+  }
 
-  // std::cout << std::endl << "Reg state:" << std::endl;
-  // for (const auto &[addr, n] : reg_map) {
-  //   show_node(n, "");
-  // }
+  std::cout << std::endl << "Reg state:" << std::endl;
+  for (const auto &[addr, n] : reg_map) {
+    show_node(n, "");
+  }
 }
 
 void dump_graph() {
@@ -89,16 +89,23 @@ void dump_graph() {
 void start_instr() { dde_state.to_instrument = true; }
 void stop_instr() { dde_state.to_instrument = false; }
 
-void start_marking(const char *mark, bool output) {
-  var_marking_ctx.is_var_marked = true;
-  var_marking_ctx.output = output;
-  var_marking_ctx.mark = mark; // this should be a deep copy
+void mark_var(double *x, const char *mark, int ordinal) {
+  assert(!mem::is_node_recorded((uint64_t)x));
+
+  double value;
+  PIN_SafeCopy(&value, x, sizeof(double));
+
+  NodePtr n = std::make_shared<Node>(value);
+  n->output = false;
+  n->uuid = ordinal < 0 ? mark : mark + std::to_string(ordinal);
+
+  mem::insert_node((uint64_t)x, n);
 }
 
-void stop_marking() {
-  var_marking_ctx.is_var_marked = false;
-  var_marking_ctx.output = false;
-  var_marking_ctx.mark.clear();
+void mark_output(double *y, const char *mark) {
+  NodePtr n = mem::expect_node((uint64_t)y);
+  n->output = true;
+  n->uuid = mark;
 }
 
 VOID routine(RTN rtn, VOID *v) {
@@ -124,18 +131,29 @@ VOID routine(RTN rtn, VOID *v) {
     return;
   }
 
-  bool dde_endvar = rtn_name.find("endvar") != std::string::npos;
-  if (dde_endvar) {
-    RTN_Open(rtn);
-    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_marking, IARG_END);
-    RTN_Close(rtn);
-    return;
-  }
+  // bool dde_endvar = rtn_name.find("endvar") != std::string::npos;
+  // if (dde_endvar) {
+  //   RTN_Open(rtn);
+  //   RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_marking_var, IARG_END);
+  //   RTN_Close(rtn);
+  //   return;
+  // }
 
   bool dde_var = rtn_name.find("var") != std::string::npos;
   if (dde_var) {
     RTN_Open(rtn);
-    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)start_marking,
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)mark_var,
+                   IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
+                   IARG_FUNCARG_ENTRYPOINT_VALUE, 1,
+                   IARG_FUNCARG_ENTRYPOINT_VALUE, 2, IARG_END);
+    RTN_Close(rtn);
+    return;
+  }
+
+  bool dde_output = rtn_name.find("output") != std::string::npos;
+  if (dde_output) {
+    RTN_Open(rtn);
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)mark_output,
                    IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
                    IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
     RTN_Close(rtn);
