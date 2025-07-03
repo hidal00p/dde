@@ -45,7 +45,7 @@ extern std::map<uint8_t, NodePtr> reg_map;
 extern std::string graph_path;
 typedef std::vector<std::string> uuid_list;
 void show_node(NodePtr n, std::string prefix);
-void show_mem_map();
+void show_mem_map(std::ostream &out);
 void clean_mem_map();
 
 namespace mem {

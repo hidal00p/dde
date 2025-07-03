@@ -65,24 +65,19 @@ bool is_visited(std::string uuid, uuid_list visited) {
 
 bool Node::is_leaf() { return !operands.empty() && output; }
 
-std::string graph_path = "/tmp/prog.gr";
-std::ofstream graph_file;
-
-void show_node(NodePtr n, std::string prefix, uuid_list &visited) {
-  if (!graph_file.is_open())
-    std::exit(-1);
-
-  graph_file << prefix << n->uuid << " " << n->value << " " << n->is_active;
+void show_node(NodePtr n, std::string prefix, uuid_list &visited,
+               std::ostream &out) {
+  out << prefix << n->uuid << " " << n->value << " " << n->is_active;
 
   std::string tr_str = get_transf_text(n->transf);
-  graph_file << " " << tr_str << std::endl;
+  out << " " << tr_str << std::endl;
 
   if (is_visited(n->uuid, visited)) {
     return;
   }
 
   for (auto &operand : n->operands) {
-    show_node(operand, prefix + " ", visited);
+    show_node(operand, prefix + " ", visited, out);
     visited.push_back(n->uuid);
   }
 }
@@ -104,8 +99,7 @@ void show_node(NodePtr n, std::string prefix) {
     show_node(operand, prefix + " ");
   }
 }
-void show_mem_map() {
-  graph_file.open(graph_path);
+void show_mem_map(std::ostream &out) {
   uuid_list visited;
 
   for (const auto &[addr, n] : mem_map) {
@@ -113,10 +107,9 @@ void show_mem_map() {
       continue;
 
     uuid_list visited_parents;
-    show_node(n, "", visited_parents);
+    show_node(n, "", visited_parents, out);
     visited.push_back(n->uuid);
   }
-  graph_file.close();
 }
 
 void clean_mem_map() { mem_map.clear(); }

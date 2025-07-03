@@ -3,6 +3,7 @@
 #include "dde/params.h"
 
 #include <cassert>
+#include <fstream>
 #include <functional>
 #include <iostream>
 
@@ -70,19 +71,22 @@ INT32 usage() {
 }
 
 void final_processing(INT32 code, VOID *v) {
-  std::cout << "Mem state:" << std::endl;
-  for (const auto &[addr, n] : mem_map) {
-    show_node(n, "");
-  }
+  // std::cout << "Mem state:" << std::endl;
+  // for (const auto &[addr, n] : mem_map) {
+  //   show_node(n, "");
+  // }
 
-  std::cout << std::endl << "Reg state:" << std::endl;
-  for (const auto &[addr, n] : reg_map) {
-    show_node(n, "");
-  }
+  // std::cout << std::endl << "Reg state:" << std::endl;
+  // for (const auto &[addr, n] : reg_map) {
+  //   show_node(n, "");
+  // }
 }
 
 void dump_graph() {
-  show_mem_map();
+  std::ofstream graph_file("/tmp/prog.gr");
+  show_mem_map(graph_file);
+  graph_file.close();
+
   clean_mem_map();
 }
 
