@@ -39,9 +39,8 @@ void product() {
 }
 
 void product_dde() {
-  dde::var("x");
   double x = 3.141;
-  dde::endvar();
+  dde::var(&x, "x");
   double y = 2.718;
   double res = x * y;
 }
@@ -53,9 +52,8 @@ void addition() {
 }
 
 void addition_dde() {
-  dde::var("x");
   double x = 3.141;
-  dde::endvar();
+  dde::var(&x, "x");
   double y = 2.718;
   double res = x + y;
 }
@@ -67,9 +65,8 @@ void subtract() {
 }
 
 void subtract_dde() {
-  dde::var("x");
   double x = 3.141;
-  dde::endvar();
+  dde::var(&x, "x");
   double y = 2.718;
   double res = x - y;
 }
@@ -81,9 +78,8 @@ void divide() {
 }
 
 void divide_dde() {
-  dde::var("x");
   double x = 3.141;
-  dde::endvar();
+  dde::var(&x, "x");
   double y = 2.718;
   double res = x / y;
 }
@@ -94,9 +90,8 @@ void intrinsic_call() {
 }
 
 void intrinsic_call_dde() {
-  dde::var("x");
   double x = 32.19525;
-  dde::endvar();
+  dde::var(&x, "x");
   double res = std::sin(x);
 }
 
@@ -107,9 +102,8 @@ void compound() {
 }
 
 void compound_dde() {
-  dde::var("x");
   double x = 3.141;
-  dde::endvar();
+  dde::var(&x, "x");
   double y = 2.718;
   double res = std::cos(42.0 + std::cos(x) * std::sin(x) / (x + y) / (x * y));
 }
@@ -129,9 +123,8 @@ void compound_sa() {
 }
 
 void compound_sa_dde() {
-  dde::var("x");
   double x = 3.141;
-  dde::endvar();
+  dde::var(&x, "x");
   double y = 2.718;
   double v0 = std::cos(x);
   double v1 = std::sin(y);

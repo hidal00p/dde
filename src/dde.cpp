@@ -94,8 +94,6 @@ void start_instr() { dde_state.to_instrument = true; }
 void stop_instr() { dde_state.to_instrument = false; }
 
 void mark_var(double *x, const char *mark, int ordinal) {
-  assert(!mem::is_node_recorded((uint64_t)x));
-
   double value;
   PIN_SafeCopy(&value, x, sizeof(double));
 
