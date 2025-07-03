@@ -133,14 +133,6 @@ VOID routine(RTN rtn, VOID *v) {
     return;
   }
 
-  // bool dde_endvar = rtn_name.find("endvar") != std::string::npos;
-  // if (dde_endvar) {
-  //   RTN_Open(rtn);
-  //   RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)stop_marking_var, IARG_END);
-  //   RTN_Close(rtn);
-  //   return;
-  // }
-
   bool dde_var = rtn_name.find("var") != std::string::npos;
   if (dde_var) {
     RTN_Open(rtn);

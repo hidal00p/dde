@@ -1,7 +1,6 @@
 #include "graph.h"
 #include <algorithm>
 #include <cassert>
-#include <fstream>
 #include <iostream>
 #include <random>
 

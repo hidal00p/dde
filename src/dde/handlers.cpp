@@ -63,7 +63,6 @@ void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
   call_pair.from = callee_name;
   dde_state.to_instrument = false;
 
-  // TODO: this is dangerous, what if nullopt
   Intrinsic intr = get_intrinsic_from_rtn_name(branch_name).value();
 
   NodePtr arg_node = reg::expect_node(REG_XMM0);
