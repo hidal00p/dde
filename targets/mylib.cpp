@@ -10,15 +10,14 @@ double f1(double x) { return std::cos(x) * g(x) * p(x); }
 
 double f2(double x) {
 
-  double y = 0.0;
-
-  for (int i = 0; i < 4; i++) {
+  double y = 1.0;
+  for(int i = 0; i < 4; i++) {
     if (i % 2 == 0)
-      y = std::sin(x);
+      y = std::sin(x + y);
     else
-      x *= y;
+      y = std::cos(x + y);
   }
 
   return y;
-};
+}
 } // namespace mylib

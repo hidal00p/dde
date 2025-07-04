@@ -71,15 +71,15 @@ INT32 usage() {
 }
 
 void final_processing(INT32 code, VOID *v) {
-  // std::cout << "Mem state:" << std::endl;
-  // for (const auto &[addr, n] : mem_map) {
-  //   show_node(n, "");
-  // }
+  std::cout << "Mem state:" << std::endl;
+  for (const auto &[addr, n] : mem_map) {
+    show_node(n, "");
+  }
 
-  // std::cout << std::endl << "Reg state:" << std::endl;
-  // for (const auto &[addr, n] : reg_map) {
-  //   show_node(n, "");
-  // }
+  std::cout << std::endl << "Reg state:" << std::endl;
+  for (const auto &[addr, n] : reg_map) {
+    show_node(n, "");
+  }
 }
 
 void dump_graph() {
