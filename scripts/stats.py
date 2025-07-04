@@ -23,9 +23,18 @@ def is_float(line: str) -> bool:
         return False
 
 
-def analyze(stats_path: pl.Path):
+def analyze(raw_path: pl.Path, dde_path: pl.Path):
     data = {}
-    with open(stats_path) as s_file:
+    with open(raw_path) as s_file:
+        func = None
+        while line := s_file.readline():
+            if not is_float(line):
+                func = line.strip().split(" ")[0]
+                data[func] = []
+                continue
+            data[func].append(float(line))
+
+    with open(dde_path) as s_file:
         func = None
         while line := s_file.readline():
             if not is_float(line):
@@ -68,9 +77,11 @@ def analyze(stats_path: pl.Path):
 
 
 if __name__ == "__main__":
-    assert len(sys.argv) == 2, "Provide full path to the stats.log"
+    assert len(sys.argv) == 3, "python3 stats.py <path to raw> <path to dde>"
 
-    stats_path = pl.Path(sys.argv[1])
-    assert stats_path.exists(), f"{stats_path} was not find."
+    raw_path = pl.Path(sys.argv[1])
+    dde_path = pl.Path(sys.argv[2])
+    assert raw_path.exists(), f"{raw_path} was not find."
+    assert dde_path.exists(), f"{dde_path} was not find."
 
-    analyze(stats_path)
+    analyze(raw_path, dde_path)
