@@ -2,6 +2,7 @@
 #include "mylib.h"
 #include <cassert>
 #include <vector>
+#include <cstdlib>
 
 void dot(std::vector<double> &a, std::vector<double> &b, double &y) {
   assert(a.size() == b.size());
