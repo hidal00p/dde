@@ -5,7 +5,8 @@
 #include <optional>
 
 struct DdeState {
-  bool to_instrument = false;
+  bool instr_active = false;
+  bool within_instrinsic = false;
 };
 
 extern DdeState dde_state;

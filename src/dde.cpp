@@ -13,7 +13,7 @@ VOID instruction(INS ins, VOID *v) {
     return;
   }
 
-  if (!dde_state.to_instrument)
+  if (dde_state.within_instrinsic)
     return;
 
   if (INS_IsCall(ins)) {
@@ -59,6 +59,18 @@ VOID instruction(INS ins, VOID *v) {
   }
 }
 
+VOID trace(TRACE tr, VOID *v) {
+  if (!dde_state.instr_active) {
+    return;
+  }
+
+  for (BBL bbl = TRACE_BblHead(tr); BBL_Valid(bbl); bbl = BBL_Next(bbl)) {
+    for (INS ins = BBL_InsHead(bbl); INS_Valid(ins); ins = INS_Next(ins)) {
+      instruction(ins, v);
+    }
+  }
+}
+
 /* ===================================================================== */
 /* Print Help Message                                                    */
 /* ===================================================================== */
@@ -90,8 +102,8 @@ void dump_graph() {
   clean_mem_map();
 }
 
-void start_instr() { dde_state.to_instrument = true; }
-void stop_instr() { dde_state.to_instrument = false; }
+void start_instr() { dde_state.instr_active = true; }
+void stop_instr() { dde_state.instr_active = false; }
 
 void mark_var(double *x, const char *mark, int ordinal) {
   double value;
@@ -176,7 +188,7 @@ int main(int argc, char *argv[]) {
   }
 
   RTN_AddInstrumentFunction(routine, 0);
-  INS_AddInstrumentFunction(instruction, 0);
+  TRACE_AddInstrumentFunction(trace, 0);
   PIN_AddFiniFunction(final_processing, 0);
 
   PIN_StartProgram();
