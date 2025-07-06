@@ -61,7 +61,7 @@ void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
 
   call_pair.to = branch_name;
   call_pair.from = callee_name;
-  dde_state.to_instrument = false;
+  dde_state.within_instrinsic = true;
 
   Intrinsic intr = get_intrinsic_from_rtn_name(branch_name).value();
 
@@ -89,7 +89,7 @@ void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
   if (call_pair.reversed(branch_name, callee_name)) {
     call_pair.to.clear();
     call_pair.from.clear();
-    dde_state.to_instrument = true;
+    dde_state.within_instrinsic = false;
   }
 }
 } // namespace call
