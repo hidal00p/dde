@@ -2,10 +2,24 @@
 #include "mytime.h"
 #include <cmath>
 
+#define TIME(name, func, iter)                                                 \
+  {                                                                            \
+    ts::RuntimeStats rs;                                                       \
+    rs.tag = name;                                                             \
+    for (int i = 0; i < iter; i++) {                                           \
+      ts::CheckPoint cp("");                                                   \
+      cp.tic = ts::clock::now();                                               \
+      func();                                                                  \
+      cp.toc = ts::clock::now();                                               \
+      rs.cps.push_back(cp);                                                    \
+    }                                                                          \
+    rs.show();                                                                 \
+  }
+
 #define TIME_DDE(name, func, iter)                                             \
   {                                                                            \
     ts::RuntimeStats rs;                                                       \
-    rs.tag = name + std::string(" dde");                                       \
+    rs.tag = name;                                                             \
     for (int i = 0; i < iter; i++) {                                           \
       ts::CheckPoint cp("");                                                   \
       cp.tic = ts::clock::now();                                               \
@@ -18,48 +32,48 @@
     rs.show();                                                                 \
   }
 
-void product_dde() {
+void product() {
   double x = 3.141;
   dde::var(&x, "x");
   double y = 2.718;
   double res = x * y;
 }
 
-void addition_dde() {
+void addition() {
   double x = 3.141;
   dde::var(&x, "x");
   double y = 2.718;
   double res = x + y;
 }
 
-void subtract_dde() {
+void subtract() {
   double x = 3.141;
   dde::var(&x, "x");
   double y = 2.718;
   double res = x - y;
 }
 
-void divide_dde() {
+void divide() {
   double x = 3.141;
   dde::var(&x, "x");
   double y = 2.718;
   double res = x / y;
 }
 
-void intrinsic_call_dde() {
+void intrinsic_call() {
   double x = 32.19525;
   dde::var(&x, "x");
   double res = std::sin(x);
 }
 
-void compound_dde() {
+void compound() {
   double x = 3.141;
   dde::var(&x, "x");
   double y = 2.718;
   double res = std::cos(42.0 + std::cos(x) * std::sin(x) / (x + y) / (x * y));
 }
 
-void compound_sa_dde() {
+void compound_sa() {
   double x = 3.141;
   dde::var(&x, "x");
   double y = 2.718;
@@ -74,17 +88,27 @@ void compound_sa_dde() {
   double res = std::cos(v7);
 }
 
-int main() {
+int main(int argc, char **argv) {
   int max_iter = 10000;
   int raw_factor = 1;
 
-  TIME_DDE("mul", product_dde, max_iter)
-  TIME_DDE("add", addition_dde, max_iter)
-  TIME_DDE("sub", subtract_dde, max_iter)
-  TIME_DDE("div", divide_dde, max_iter)
-  TIME_DDE("sin", intrinsic_call_dde, max_iter)
-  TIME_DDE("compound", compound_dde, max_iter)
-  TIME_DDE("compound_sac", compound_sa_dde, max_iter)
+  if (argc == 1) {
+    TIME("mul", product, max_iter)
+    TIME("add", addition, max_iter)
+    TIME("sub", subtract, max_iter)
+    TIME("div", divide, max_iter)
+    TIME("sin", intrinsic_call, max_iter)
+    TIME("compound", compound, max_iter)
+    TIME("compound_sac", compound_sa, max_iter)
+  } else {
+    TIME_DDE("mul", product, max_iter)
+    TIME_DDE("add", addition, max_iter)
+    TIME_DDE("sub", subtract, max_iter)
+    TIME_DDE("div", divide, max_iter)
+    TIME_DDE("sin", intrinsic_call, max_iter)
+    TIME_DDE("compound", compound, max_iter)
+    TIME_DDE("compound_sac", compound_sa, max_iter)
+  }
 
   return 0;
 }
