@@ -32,7 +32,6 @@
     rs.show();                                                                 \
   }
 
-
 void product() {
   double x = 3.141;
   dde::var(&x, "x");

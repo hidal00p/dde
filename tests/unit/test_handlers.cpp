@@ -12,29 +12,26 @@
 class DdeStateSetup : public TestSetup {
 public:
   void setup() {
-    dde_state.to_instrument = false;
+    dde_state.within_instrinsic = false;
     call_pair.to.clear();
     call_pair.from.clear();
   }
 
   void teardown() {
-    dde_state.to_instrument = false;
+    dde_state.within_instrinsic = false;
     call_pair.to.clear();
     call_pair.from.clear();
   }
 };
 
 TESTWITHSETUP(test_call_to_intrnsic_disables_instrumentation, DdeStateSetup) {
-  dde_state.to_instrument = true;
   reg::insert_node(REG_XMM0, std::make_shared<Node>(Pi / 2));
 
   analysis::call::track_call_to_intrinsic(SINUS, MAIN);
-  CHECK(dde_state.to_instrument == false);
+  CHECK(dde_state.within_instrinsic == true);
 }
 
 TESTWITHSETUP(test_call_to_intrnsic_as_a_transformation, DdeStateSetup) {
-  dde_state.to_instrument = true;
-
   reg::insert_node(REG_XMM0, std::make_shared<Node>(Pi / 2));
   analysis::call::track_call_to_intrinsic(SINUS, MAIN);
 
@@ -43,21 +40,17 @@ TESTWITHSETUP(test_call_to_intrnsic_as_a_transformation, DdeStateSetup) {
 
 TESTWITHSETUP(test_return_from_intrnsic_enables_instrumentation,
               DdeStateSetup) {
-  dde_state.to_instrument = true;
-
   reg::insert_node(REG_XMM0, std::make_shared<Node>(Pi / 2));
   analysis::call::track_call_to_intrinsic(SINUS, MAIN);
 
   analysis::call::track_ret_from_intrinsic(MAIN, SINUS);
 
-  CHECK(dde_state.to_instrument == true);
+  CHECK(dde_state.within_instrinsic == false);
 }
 
 TESTWITHSETUP(test_call_to_unregistered_func_keeps_instrumentation,
               DdeStateSetup) {
-  dde_state.to_instrument = true;
-
   analysis::call::track_call_to_intrinsic(FOO, MAIN);
 
-  CHECK(dde_state.to_instrument == true);
+  CHECK(dde_state.within_instrinsic == false);
 }
