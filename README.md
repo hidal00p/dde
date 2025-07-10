@@ -14,10 +14,12 @@
 
 </div>
 
-`dde` is a tool based on Intel Pin, which attempts to extract a DAG representation
-of an executabe.
+---
 
-Since the primary target application is the derivative evaluation based on the obtianed DAG,
+`dde` is a tool based on Intel Pin, which attempts to extract a DAG representation
+of an executable, specifically of it's marked portion.
+
+Since the primary target application is the derivative evaluation based on the obtained DAG,
 the instructions tracked are only those from an engineered subset of the entire x86 ISA deemed
 relevant for the DAG construction.
 
@@ -47,14 +49,14 @@ compound_sac dde    4.37545     0.066463  0.0860439      860.439     123.4322
 
 ## Project structure
 
-The project is devided into 3 primary components (associated with the following folders):
+The project is divided into 3 primary components (associated with the following folders):
 
 ```
 -- src
   Core sources for the tool's implementation.
 
--- targets
-  A demo target program which provides a use case for the tool.
+-- examples
+  Demo programs which show possible ways to use the tool.
 
 -- tests
   A set of tests (both unit and integration) to provide some reassurance about tool's correctness.
@@ -74,7 +76,7 @@ The project is devided into 3 primary components (associated with the following 
 
 - GNU Make
 - GNU C++ compiler
-- Properly setup Intel Pin Environement
+- Properly setup Intel Pin Environment
 
 Both GNU make and the compilation stack can be installed on the Linux-based system using the following commands:
 
@@ -130,8 +132,8 @@ export PATH=$(PATH):$(PIN_ROOT)
 make
 
 # Run the test case
-pin -t src/obj-intel64/dde.so -- targets/main.exe
+pin -t src/obj-intel64/dde.so -- examples/newton.exe
 ```
 
-- If you get a successful build and a set of solutions printed out to your screen congratulations you are good to go!
+- A success is indicated by a successful build of the program and a set of solutions printed out to the screen!
 </details>
