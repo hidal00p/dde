@@ -1,8 +1,7 @@
-TARGETS = main.exe test.exe
+TARGETS = newton.exe \
+		  rosenbrock.exe
 OBJS = mylib.o
 
-# -fno-plt     - use absolute references for dynamically linked libraries
-# -mfpmath=387 - use x87 instruction extensions instead of SSE for flops
 INCLUDE_FLAGS = -I"../lib/dde/include" -I"../lib/utils/include"
 CPP_FLAGS = -g -O0 -std=c++20 -fno-plt $(INCLUDE_FLAGS)
 LIB_FLAGS = -L"../lib/utils" -lgraph -lmytime

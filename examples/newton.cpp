@@ -16,9 +16,13 @@ void newton(double, std::function<double(double)> f);
 int main() {
   std::vector<double> guesses = {-3.48, -2.0, 0.25, 3.0, 6.0, 10.0};
 
+  std::cout << "Solving: f(x) = cos(x) * (x + 4) * (x - 1.345)" << std::endl;
   for (double &x0 : guesses)
     newton(x0, mylib::f1);
 
+  std::cout << std::endl
+            << "Solving: f(x) = cos(x + sin(x + cos(x + sin(x + 1.0))))"
+            << std::endl;
   for (double &x0 : guesses)
     newton(x0, mylib::f2);
 
@@ -32,8 +36,8 @@ void newton(double x0, std::function<double(double)> f) {
 
   uint8_t i = 0;
   double eps = 10;
+  double x_guess = x0;
 
-  std::cout << "Guess: " << x0 << " = " << x0 / M_PI << " Pi" << std::endl;
   do {
     // Forward step
     double x = x0;
@@ -57,8 +61,8 @@ void newton(double x0, std::function<double(double)> f) {
 
   } while (++i < MAX_ITER && eps > TOL);
 
-  std::cout << "Solution: " << x0 << " = " << x0 / M_PI << " Pi" << std::endl
-            << std::endl;
+  std::cout << "Guess: " << x_guess << " -> Solution: " << x0 << " = "
+            << x0 / M_PI << " Pi" << std::endl;
 }
 
 bool parse_args(int argc, char *argv[]) {
