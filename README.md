@@ -1,12 +1,4 @@
-```text
- ____  ____  _____ 
-|  _ \|  _ \| ____|
-| | | | | | |  _|  
-| |_| | |_| | |___ 
-|____/|____/|_____|
-
-(dynamic DAG extractor)
-```
+<h1 align="center">dde - dynamic DAG extractor</h1>
 
 <div align="left">
 
