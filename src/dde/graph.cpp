@@ -116,6 +116,7 @@ void clean_mem_map() { mem_map.clear(); }
 namespace mem {
 void insert_node(uint64_t ef_addr, NodePtr n) { mem_map[ef_addr] = n; };
 
+void clean_mem(uint64_t ef_addr) { mem_map.erase(ef_addr); }
 bool is_node_recorded(uint64_t ef_addr) { return mem_map.count(ef_addr) > 0; }
 
 std::optional<NodePtr> get_node(uint64_t ef_addr) {

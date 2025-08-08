@@ -25,7 +25,7 @@ VOID instruction(INS ins, VOID *v) {
   // Register read and write
   if (opcode == XED_ICLASS_MOVSD_XMM || opcode == XED_ICLASS_MOVSD ||
       opcode == XED_ICLASS_MOV || opcode == XED_ICLASS_MOVQ ||
-      opcode == XED_ICLASS_MOVAPD) {
+      opcode == XED_ICLASS_MOVAPD || opcode == XED_ICLASS_MOVZX) {
     instrumentation::handle_mov(ins);
     return;
   }

@@ -20,16 +20,8 @@ void track_mem_reg(ADDRINT read_ea, REG write_reg) {
 }
 void track_reg_mem(REG read_reg, ADDRINT write_ea) {
   if (!reg::is_node_recorded(read_reg)) {
+    mem::clean_mem(write_ea);
     return;
-  }
-
-  if (mem::is_node_recorded(write_ea)) {
-    NodePtr output_candidate = mem::expect_node(write_ea);
-    if (output_candidate->output) {
-      NodePtr transfer_node = reg::expect_node(read_reg);
-      transfer_node->uuid = output_candidate->uuid;
-      transfer_node->output = true;
-    }
   }
 
   reg::write_to_mem(read_reg, write_ea);
@@ -42,8 +34,6 @@ void track_reg_reg(REG read_reg, REG write_reg) {
 
   reg::write_to_other_reg(read_reg, write_reg);
 }
-
-void track_imm_reg(REG write_reg) { reg::clean_reg(write_reg); }
 } // namespace mov
 namespace call {
 void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
@@ -118,7 +108,7 @@ void handle_mov(INS ins) {
                    IARG_UINT32, mov_ctx->src.origin.reg, IARG_UINT32,
                    mov_ctx->dest.origin.reg, IARG_END);
   } else {
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)analysis::mov::track_imm_reg,
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)reg::clean_reg,
                    IARG_UINT32, mov_ctx->dest.origin.reg, IARG_END);
   }
 }

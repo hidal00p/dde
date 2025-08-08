@@ -50,6 +50,7 @@ void clean_mem_map();
 
 namespace mem {
 void insert_node(uint64_t ef_addr, NodePtr n);
+void clean_mem(uint64_t ef_addr);
 bool is_node_recorded(uint64_t ef_addr);
 std::optional<NodePtr> get_node(uint64_t ef_addr);
 NodePtr expect_node(uint64_t ef_addr);
