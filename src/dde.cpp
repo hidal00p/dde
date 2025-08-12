@@ -109,7 +109,13 @@ void mark_var(double *x, const char *mark, int ordinal) {
   double value;
   PIN_SafeCopy(&value, x, sizeof(double));
 
-  NodePtr n = std::make_shared<Node>(value);
+  NodePtr n;
+  if (mem::is_node_recorded((uint64_t)x)) {
+    n = mem::expect_node((uint64_t)x);
+  } else {
+    n = std::make_shared<Node>(value);
+  }
+
   n->output = false;
   n->uuid = ordinal < 0 ? mark : mark + std::to_string(ordinal);
 

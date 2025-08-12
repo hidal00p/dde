@@ -37,11 +37,13 @@ void track_reg_reg(REG read_reg, REG write_reg) {
 } // namespace mov
 namespace call {
 void track_call_to_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
+  if (dde_state.within_instrinsic)
+    return;
+
   std::string branch_name = RTN_FindNameByAddress(branch_addr);
   std::string callee_name = RTN_FindNameByAddress(callee_addr);
 
-  if (!rtn_is_valid_transform(branch_name) &&
-      !rtn_is_valid_transform(callee_name)) {
+  if (!rtn_is_valid_transform(branch_name)) {
     return;
   }
 
@@ -71,8 +73,7 @@ void track_ret_from_intrinsic(ADDRINT branch_addr, ADDRINT callee_addr) {
   std::string branch_name = RTN_FindNameByAddress(branch_addr);
   std::string callee_name = RTN_FindNameByAddress(callee_addr);
 
-  if (!rtn_is_valid_transform(branch_name) &&
-      !rtn_is_valid_transform(callee_name)) {
+  if (!rtn_is_valid_transform(callee_name)) {
     return;
   }
 
@@ -108,8 +109,8 @@ void handle_mov(INS ins) {
                    IARG_UINT32, mov_ctx->src.origin.reg, IARG_UINT32,
                    mov_ctx->dest.origin.reg, IARG_END);
   } else {
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)reg::clean_reg,
-                   IARG_UINT32, mov_ctx->dest.origin.reg, IARG_END);
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)reg::clean_reg, IARG_UINT32,
+                   mov_ctx->dest.origin.reg, IARG_END);
   }
 }
 
