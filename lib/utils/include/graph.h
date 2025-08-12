@@ -20,6 +20,7 @@ struct Node {
   double val;
   double der = 0.0;
   NodePtrVec parents;
+  NodePtrVec children;
 
   Node(std::string raw_repr);
 
@@ -44,6 +45,8 @@ public:
   void order_graph(NodePtr start_node);
 
   void eval_adjoints();
+
+  void swap_node_for(NodePtr node_to_insert);
 };
 
 #endif

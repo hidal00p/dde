@@ -1,5 +1,6 @@
 TARGETS = newton.exe \
-		  rosenbrock.exe
+		  rosenbrock.exe \
+		  hessian.exe
 OBJS = mylib.o
 
 INCLUDE_FLAGS = -I"../lib/dde/include" -I"../lib/utils/include"

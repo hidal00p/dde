@@ -134,8 +134,16 @@ NodePtr Graph::parse_node() {
   if (n->bop) {
     n->parents.push_back(parse_node());
     n->parents.push_back(parse_node());
+
+    if (n->parents[0]->uuid == n->parents[1]->uuid) {
+      n->parents[0]->children.push_back(n);
+    } else {
+      n->parents[0]->children.push_back(n);
+      n->parents[1]->children.push_back(n);
+    }
   } else if (n->op != NOP) {
     n->parents.push_back(parse_node());
+    n->parents[0]->children.push_back(n);
   }
 
   nodes[n->uuid] = n;
@@ -160,4 +168,21 @@ void Graph::eval_adjoints() {
   for (auto node = topo.rbegin(); node != topo.rend(); node++) {
     (*node)->differentiate();
   }
+}
+
+void Graph::swap_node_for(NodePtr node_to_insert) {
+  std::string uuid = node_to_insert->uuid;
+  if(nodes.count(uuid) == 0)
+    return;
+
+  NodePtr node_to_remove = nodes[uuid];
+  for(auto &c: node_to_remove->children) {
+    for(size_t pc = 0; pc < c->parents.size(); pc++){
+      if(c->parents[pc]->uuid != node_to_remove->uuid)
+        continue;
+      c->parents[pc] = node_to_insert;
+    }
+  }
+  nodes.erase(node_to_remove->uuid);
+  nodes[node_to_insert->uuid] = node_to_insert;
 }
