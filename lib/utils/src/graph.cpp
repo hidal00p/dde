@@ -9,6 +9,13 @@
 
 #define NOP "\0"
 
+double thesin(double x) {
+  return std::sin(x);
+}
+double thecos(double x) {
+  return std::cos(x);
+}
+
 Node::Node(std::string raw_repr) {
   std::vector<std::string> tokens;
   std::string token;
@@ -89,16 +96,14 @@ void Node::differentiate() {
     }
 
   } else {
+    NodePtr p = parents[0];
     if (op == "~") {
-      parents[0]->der += -der;
-    }
-    else if (op == "sin") {
-      parents[0]->der += std::cos(parents[0]->val) * der;
-    }
-    else if (op == "cos") {
-      parents[0]->der += -std::sin(parents[0]->val) * der;
-    }
-    else {
+      p->der += -der;
+    } else if (op == "sin") {
+      p->der += thecos(p->val) * der;
+    } else if (op == "cos") {
+      p->der += thesin(p->val) * (-der);
+    } else {
       assert(false && "Unsupported binary op");
     }
   }
@@ -152,8 +157,6 @@ void Graph::order_graph(NodePtr start_node) {
 }
 
 void Graph::eval_adjoints() {
-  order_graph(root);
-  root->der = 1.0;
   for (auto node = topo.rbegin(); node != topo.rend(); node++) {
     (*node)->differentiate();
   }

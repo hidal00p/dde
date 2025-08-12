@@ -1,6 +1,6 @@
 MY_LIBS = libgraph.a libmytime.a
 INCLUDE_FLAGS = -I"./include"
-CPP_FLAGS = -std=c++20 $(INCLUDE_FLAGS)
+CPP_FLAGS = -g -std=c++20 $(INCLUDE_FLAGS)
 
 libs: $(MY_LIBS)
 

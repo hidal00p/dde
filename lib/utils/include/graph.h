@@ -30,10 +30,10 @@ struct Node {
 class Graph {
 private:
   std::ifstream graph_file;
-  NodePtrVec topo;
   std::map<std::string, NodePtr> topo_visited;
 
 public:
+  NodePtrVec topo;
   NodePtr root;
   std::map<std::string, NodePtr> nodes;
 
