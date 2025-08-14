@@ -53,6 +53,8 @@ void newton(double x0, std::function<double(double)> f) {
     dde::dump_graph();
 
     Graph dag(graph_path);
+    dag.order_graph(dag.root);
+    dag.root->der = 1.0;
     dag.eval_adjoints();
     double df_dx = dag.nodes["x"]->der;
 

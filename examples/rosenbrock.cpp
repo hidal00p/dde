@@ -77,6 +77,8 @@ int main(int argc, char **argv) {
 
       dde::dump_graph();
       Graph dag(graph_path);
+      dag.order_graph(dag.root);
+      dag.root->der = 1.0;
       dag.eval_adjoints();
 
       for (int i = 0; i < x.size(); i++) {
