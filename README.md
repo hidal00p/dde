@@ -9,11 +9,12 @@
 ---
 
 `dde` is a tool based on Intel Pin, which attempts to extract a DAG representation
-of an executable, specifically of it's marked portion.
+of a user-marked portion of an executable.
 
 Since the primary target application is the derivative evaluation based on the obtained DAG,
 the instructions tracked are only those from an engineered subset of the entire x86 ISA deemed
 relevant for the DAG construction.
+
 
 <details>
   <summary>Runtime and overhead estimations</summary>
@@ -37,6 +38,46 @@ compound_sac        1.3037      0.000487  0.000697094      6.97094   -
 compound_sac dde    4.37545     0.066463  0.0860439      860.439     123.4322
 ```
 </details>
+
+
+## Supported list of instructions
+
+`mov`
+`movq`
+`movzx`
+`movapd`
+`movsd`
+`movsdxmm`
+
+`addsd`
+`mulsd`
+`subsd`
+`divsd`
+
+`call` to `sin` `cos` `exp`
+
+
+<details>
+  <summary>Unsupported instructions</summary>
+
+- Instructions related to floating-point bit tricks, e.g. `xord` to swap the sign bit
+- VEX instructions, e.g., `vmovsd` `vmulsd` etc
+- SIMD fused instructions, e.g., `vfmadd213sd` `vfnmadd213sd` etc (to extract DAG of SDL routines)
+</details>
+
+
+## Mechanics kurzgesagt
+
+This is a binary instrumentation tool, which tracks memory, arithmetic and certain
+call instructions to construct a computational graph of the executed program (or more
+specifically of the subprogram of interest).
+
+Internally the tool builds a hash map of nodes, which are associated with
+memory addresses of variables of interest. Move and arithmetic operations
+applied to those address are also applied to the corresponding nodes to have
+coherence between the memory state and the node state. All operations that
+are applied to other variables are ignored to reduce the size of the DAG, and
+tracking overhead.
 
 
 ## Project structure
