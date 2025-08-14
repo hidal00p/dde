@@ -84,16 +84,9 @@ tracking overhead.
 
 The project is divided into 3 primary components (associated with the following folders):
 
-```
--- src
-  Core sources for the tool's implementation.
-
--- examples
-  Demo programs which show possible ways to use the tool.
-
--- tests
-  A set of tests (both unit and integration) to provide some reassurance about tool's correctness.
-```
+- src -- core sources for the tool's implementation.
+- examples -- demo programs which show possible ways to use the tool.
+- tests -- a set of tests (both unit and integration) to provide some reassurance about tool's correctness.
 
 
 ## Prerequisites and setup
