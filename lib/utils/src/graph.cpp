@@ -9,11 +9,15 @@
 
 #define NOP "\0"
 
-double thesin(double x) {
+double _sin_(double x) {
   return std::sin(x);
 }
-double thecos(double x) {
+double _cos_(double x) {
   return std::cos(x);
+}
+
+double _exp_(double x) {
+  return std::exp(x);
 }
 
 Node::Node(std::string raw_repr) {
@@ -92,7 +96,8 @@ void Node::differentiate() {
       rhs1->der += der / rhs2->val;
       rhs2->der += -rhs1->val * der / (rhs2->val * rhs2->val);
     } else {
-      assert(false && "Unsupported binary op");
+      std::cout << "Unsupported bop " << op << std::endl;
+      assert(false);
     }
 
   } else {
@@ -100,11 +105,14 @@ void Node::differentiate() {
     if (op == "~") {
       p->der += -der;
     } else if (op == "sin") {
-      p->der += thecos(p->val) * der;
+      p->der += _cos_(p->val) * der;
     } else if (op == "cos") {
-      p->der += thesin(p->val) * (-der);
+      p->der += _sin_(p->val) * (-der);
+    } else if (op == "exp") {
+      p->der += _exp_(p->val) * der;
     } else {
-      assert(false && "Unsupported binary op");
+      std::cout << "Unsupported op " << op << std::endl;
+      assert(false);
     }
   }
 }
