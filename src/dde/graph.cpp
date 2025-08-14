@@ -38,6 +38,9 @@ std::string get_transf_text(Transformation tr) {
   case Transformation::COS:
     tr_str = "cos";
     break;
+  case Transformation::EXP:
+    tr_str = "exp";
+    break;
   }
   return tr_str;
 }
@@ -66,10 +69,8 @@ bool Node::is_leaf() { return !operands.empty() && output; }
 
 void show_node(NodePtr n, std::string prefix, uuid_list &visited,
                std::ostream &out) {
-  out << prefix << n->uuid << " " << n->value << " " << n->is_active;
-
-  std::string tr_str = get_transf_text(n->transf);
-  out << " " << tr_str << std::endl;
+  out << prefix << n->uuid << " " << n->value << " " << n->is_active << " "
+      << get_transf_text(n->transf) << std::endl;
 
   if (is_visited(n->uuid, visited)) {
     return;
@@ -82,17 +83,8 @@ void show_node(NodePtr n, std::string prefix, uuid_list &visited,
 }
 void show_node(NodePtr n, std::string prefix) {
 
-  std::cout << prefix << n->uuid << " " << n->value << " " << n->is_active;
-
-  std::string tr_str = n->transf == Transformation::ASSIGN ? ""
-                       : n->transf == Transformation::ADD  ? "+"
-                       : n->transf == Transformation::MUL  ? "*"
-                       : n->transf == Transformation::DIV  ? "/"
-                       : n->transf == Transformation::SUB  ? "-"
-                       : n->transf == Transformation::CHS  ? "~"
-                       : n->transf == Transformation::SIN  ? "sin"
-                                                           : "cos";
-  std::cout << " " << tr_str << std::endl;
+  std::cout << prefix << n->uuid << " " << n->value << " " << n->is_active
+            << " " << get_transf_text(n->transf) << std::endl;
 
   for (auto &operand : n->operands) {
     show_node(operand, prefix + " ");

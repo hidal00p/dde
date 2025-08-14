@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-enum Transformation { ASSIGN, MUL, ADD, DIV, SUB, CHS, SIN, COS };
+enum Transformation { ASSIGN, MUL, ADD, DIV, SUB, CHS, SIN, COS, EXP };
 std::string get_transf_text(Transformation tr);
 std::string get_uuid();
 
